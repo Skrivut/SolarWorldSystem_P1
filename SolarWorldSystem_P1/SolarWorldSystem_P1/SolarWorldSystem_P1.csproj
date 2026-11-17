@@ -51,6 +51,12 @@
   <ItemGroup>
     <Compile Include="Data\Entities.cs" />
     <Compile Include="Data\ErpDataContext.cs" />
+    <Compile Include="Forms\frmApproval.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\frmApproval.Designer.cs">
+      <DependentUpon>frmApproval.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\frmLogin.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -69,8 +75,15 @@
     <Compile Include="Forms\frmRequisition.Designer.cs">
       <DependentUpon>frmRequisition.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\frmRequisitionList.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\frmRequisitionList.Designer.cs">
+      <DependentUpon>frmRequisitionList.cs</DependentUpon>
+    </Compile>
     <Compile Include="Helpers\PasswordHelper.cs" />
     <Compile Include="Helpers\Session.cs" />
+    <Compile Include="Models\RequisitionDtos.cs" />
     <Compile Include="Models\RfStatus.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -23,6 +23,7 @@ namespace SolarWorldERP.Forms
             this.mnuExit = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuRequisition = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuNewRequisition = new System.Windows.Forms.ToolStripMenuItem();
+            this.mnuRequisitionList = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuPurchasing = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuInventory = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuDelivery = new System.Windows.Forms.ToolStripMenuItem();
@@ -72,7 +73,8 @@ namespace SolarWorldERP.Forms
             // mnuRequisition
             // 
             this.mnuRequisition.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.mnuNewRequisition});
+            this.mnuNewRequisition,
+            this.mnuRequisitionList});
             this.mnuRequisition.Name = "mnuRequisition";
             this.mnuRequisition.Size = new System.Drawing.Size(81, 20);
             this.mnuRequisition.Text = "Requisition";
@@ -83,6 +85,13 @@ namespace SolarWorldERP.Forms
             this.mnuNewRequisition.Size = new System.Drawing.Size(163, 22);
             this.mnuNewRequisition.Text = "New Requisition";
             this.mnuNewRequisition.Click += new System.EventHandler(this.mnuNewRequisition_Click);
+            // 
+            // mnuRequisitionList
+            // 
+            this.mnuRequisitionList.Name = "mnuRequisitionList";
+            this.mnuRequisitionList.Size = new System.Drawing.Size(163, 22);
+            this.mnuRequisitionList.Text = "Requisition List";
+            this.mnuRequisitionList.Click += new System.EventHandler(this.mnuRequisitionList_Click);
             // 
             // mnuPurchasing
             // 
@@ -150,6 +159,7 @@ namespace SolarWorldERP.Forms
         private System.Windows.Forms.ToolStripMenuItem mnuExit;
         private System.Windows.Forms.ToolStripMenuItem mnuRequisition;
         private System.Windows.Forms.ToolStripMenuItem mnuNewRequisition;
+        private System.Windows.Forms.ToolStripMenuItem mnuRequisitionList;
         private System.Windows.Forms.ToolStripMenuItem mnuPurchasing;
         private System.Windows.Forms.ToolStripMenuItem mnuInventory;
         private System.Windows.Forms.ToolStripMenuItem mnuDelivery;

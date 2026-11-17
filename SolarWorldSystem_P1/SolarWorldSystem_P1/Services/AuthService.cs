@@ -5,9 +5,13 @@ using SolarWorldERP.Helpers;
 
 namespace SolarWorldERP.Services
 {
+    /// <summary>Handles checking a username and password.</summary>
     public static class AuthService
     {
-        // Returns the user on success, or null if the username/password is wrong.
+        /// <summary>
+        /// Looks up the user, hashes the typed password and compares it with the stored hash.
+        /// Returns the User on success, or null if the username or password is wrong or the user is inactive.
+        /// </summary>
         public static User Login(string userName, string password)
         {
             using (var db = new ErpDataContext())

@@ -5,13 +5,19 @@ using SolarWorldERP.Services;
 
 namespace SolarWorldERP.Forms
 {
+    /// <summary>The login window. Shown first; the program only continues if login succeeds.</summary>
     public partial class frmLogin : Form
     {
+        /// <summary>Builds the controls drawn in the designer.</summary>
         public frmLogin()
         {
             InitializeComponent();
         }
 
+        /// <summary>
+        /// Login button: checks the username and password with AuthService.
+        /// On success it stores the user in Session and closes with OK. On failure it shows a message.
+        /// </summary>
         private void btnLogin_Click(object sender, EventArgs e)
         {
             try

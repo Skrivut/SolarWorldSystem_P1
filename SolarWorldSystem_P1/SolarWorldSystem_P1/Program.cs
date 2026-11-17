@@ -6,6 +6,10 @@ namespace SolarWorldERP
 {
     static class Program
     {
+        /// <summary>
+        /// Where the program starts. Shows the login; if it succeeds, opens the main window.
+        /// When the user chooses "Log out" the loop shows the login again; any other close ends the program.
+        /// </summary>
         [STAThread]
         static void Main()
         {

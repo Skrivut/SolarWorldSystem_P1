@@ -4,7 +4,11 @@ using System.Data.Linq.Mapping;
 namespace SolarWorldERP.Data
 {
     // Hand-mapped LINQ to SQL entities (no .dbml designer file needed).
+    // Each class = one table. Each [Column] property = one column in that table.
+    // To add a new table: copy one of these classes, change the table name and columns,
+    // then add a Table<...> property for it in ErpDataContext.
 
+    /// <summary>A person who can log in (table dbo.Users). Role is Staff, Owner or Driver.</summary>
     [Table(Name = "dbo.Users")]
     public class User
     {
@@ -16,6 +20,7 @@ namespace SolarWorldERP.Data
         [Column] public bool IsActive { get; set; }
     }
 
+    /// <summary>A stock item (table dbo.Items). QtyOnHand minus QtyReserved is what is still free to request.</summary>
     [Table(Name = "dbo.Items")]
     public class Item
     {
@@ -31,6 +36,7 @@ namespace SolarWorldERP.Data
         [Column] public int MaxStockLevel { get; set; }
     }
 
+    /// <summary>The header of a requisition form, RF (table dbo.Requisitions). Status holds an RfStatus name.</summary>
     [Table(Name = "dbo.Requisitions")]
     public class Requisition
     {
@@ -47,6 +53,7 @@ namespace SolarWorldERP.Data
         [Column(CanBeNull = true)] public string Remarks { get; set; }
     }
 
+    /// <summary>One item line inside an RF (table dbo.RequisitionItems), with how much was reserved and how much is short.</summary>
     [Table(Name = "dbo.RequisitionItems")]
     public class RequisitionItem
     {
