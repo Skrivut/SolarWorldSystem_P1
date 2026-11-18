@@ -72,3 +72,58 @@ INSERT INTO dbo.Items (ItemCode, ItemName, Unit, StockTag, QtyOnHand, IsScarce, 
  ('BRK-DC',   'DC Breaker 2P 32A',         'pcs',   'Project', 15,  0, 5,  0),
  ('SP-550-S', 'Solar Panel 550W (for sale)','pcs',  'ForSale', 10,  1, 5,  30);
 GO
+
+-- ===== Purchasing & Delivery =====
+
+-- Tracks which schema changes were applied, so future changes ship as new blocks
+IF OBJECT_ID('dbo.SchemaVersion') IS NULL
+CREATE TABLE dbo.SchemaVersion (
+    Version     INT PRIMARY KEY,
+    Description VARCHAR(200) NOT NULL,
+    AppliedOn   DATETIME NOT NULL DEFAULT GETDATE()
+);
+
+IF OBJECT_ID('dbo.Suppliers') IS NULL
+CREATE TABLE dbo.Suppliers (
+    SupplierId   INT IDENTITY PRIMARY KEY,
+    SupplierName VARCHAR(150) NOT NULL UNIQUE,
+    ContactInfo  VARCHAR(255) NULL,
+    IsActive     BIT NOT NULL DEFAULT 1
+);
+
+IF OBJECT_ID('dbo.PurchaseOrders') IS NULL
+CREATE TABLE dbo.PurchaseOrders (
+    PoId         INT IDENTITY PRIMARY KEY,
+    PoNumber     VARCHAR(20) NOT NULL UNIQUE,      -- e.g. PO-2026-0001
+    SupplierId   INT NOT NULL REFERENCES dbo.Suppliers(SupplierId),
+    RfId         INT NULL REFERENCES dbo.Requisitions(RfId),  -- set when ordering to cover an RF shortage
+    Status       VARCHAR(30) NOT NULL DEFAULT 'Draft',        -- Draft, Ordered, PartiallyReceived, Received, Cancelled (no CHECK, so new statuses need no schema change)
+    DateCreated  DATETIME NOT NULL DEFAULT GETDATE(),
+    CreatedBy    VARCHAR(100) NULL,
+    ExpectedDate DATE NULL,
+    Remarks      VARCHAR(255) NULL
+);
+
+IF OBJECT_ID('dbo.PurchaseOrderItems') IS NULL
+CREATE TABLE dbo.PurchaseOrderItems (
+    PoItemId    INT IDENTITY PRIMARY KEY,
+    PoId        INT NOT NULL REFERENCES dbo.PurchaseOrders(PoId),
+    ItemId      INT NOT NULL REFERENCES dbo.Items(ItemId),
+    QtyOrdered  INT NOT NULL CHECK (QtyOrdered > 0),
+    QtyReceived INT NOT NULL DEFAULT 0 CHECK (QtyReceived >= 0),
+    UnitCost    DECIMAL(12,2) NULL
+);
+
+IF OBJECT_ID('dbo.Deliveries') IS NULL
+CREATE TABLE dbo.Deliveries (
+    DeliveryId      INT IDENTITY PRIMARY KEY,
+    DeliveryNumber  VARCHAR(20) NOT NULL UNIQUE,   -- e.g. DR-2026-0001
+    RfId            INT NOT NULL REFERENCES dbo.Requisitions(RfId),
+    DriverUserId    INT NULL REFERENCES dbo.Users(UserId),
+    Status          VARCHAR(30) NOT NULL DEFAULT 'Scheduled',  -- Scheduled, OutForDelivery, Delivered, Failed, Cancelled
+    DateScheduled   DATETIME NULL,
+    DateDelivered   DATETIME NULL,
+    ReceivedBy      VARCHAR(100) NULL,
+    Remarks         VARCHAR(255) NULL
+);
+GO

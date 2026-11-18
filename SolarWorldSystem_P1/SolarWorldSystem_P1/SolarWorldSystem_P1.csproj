@@ -121,8 +121,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Database\01_schema_and_sample_data.sql" />
-    <Content Include="Database\Delivery.sql" />
-    <Content Include="Database\Purchasing.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
