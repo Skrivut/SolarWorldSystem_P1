@@ -64,4 +64,52 @@ namespace SolarWorldERP.Data
         [Column] public int QtyReserved { get; set; }
         [Column] public int QtyShortage { get; set; }
     }
+
+    [Table(Name = "dbo.PurchaseOrder")]
+    public class PurchaseOrder
+    {
+        [Column(IsPrimaryKey = true, IsDbGenerated = true)] public int PurchaseOrderId { get; set; }
+        [Column] public string PONumber { get; set; }
+        [Column] public string SupplierName { get; set; }
+        [Column] public string RequestedBy { get; set; }
+        [Column] public string Status { get; set; }
+        [Column] public DateTime DateCreated { get; set; }
+        [Column(CanBeNull = true)] public DateTime? DateApproved { get; set; }
+        [Column(CanBeNull = true)] public DateTime? DateOrdered { get; set; }
+        [Column] public decimal TotalAmount { get; set; }
+    }
+
+    [Table(Name = "dbo.PurchaseOrderLines")]
+    public class PurchaseOrderLine
+    {
+        [Column(IsPrimaryKey = true, IsDbGenerated = true)] public int PurchaseOrderLineId { get; set; }
+        [Column] public int PurchaseOrderId { get; set; }
+        [Column] public int ItemId { get; set; }
+        [Column] public int QtyOrdered { get; set; }
+        [Column] public int QtyReceived { get; set; }
+        [Column] public decimal UnitCost { get; set; }
+    }
+
+    [Table(Name = "dbo.Delivery")]
+    public class Delivery
+    {
+        [Column(IsPrimaryKey = true, IsDbGenerated = true)] public int DeliveryId { get; set; }
+        [Column] public string DeliveryNumber { get; set; }
+        [Column] public int PurchaseOrderId { get; set; }
+        [Column] public string DeliveryAddress { get; set; }
+        [Column(CanBeNull = true)] public string DriverName { get; set; }
+        [Column] public string Status { get; set; }
+        [Column(CanBeNull = true)] public DateTime? ExpectedDate { get; set; }
+        [Column(CanBeNull = true)] public DateTime? DeliveredDate { get; set; }
+        [Column(CanBeNull = true)] public string Notes { get; set; }
+    }
+
+    [Table(Name = "dbo.DeliveryLines")]
+    public class DeliveryLine
+    {
+        [Column(IsPrimaryKey = true, IsDbGenerated = true)] public int DeliveryLineId { get; set; }
+        [Column] public int DeliveryId { get; set; }
+        [Column] public int PurchaseOrderLineId { get; set; }
+        [Column] public int QtyDelivered { get; set; }
+    }
 }
