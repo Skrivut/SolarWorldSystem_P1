@@ -62,14 +62,20 @@ namespace SolarWorldERP.Forms
             OpenChild<frmRequisitionList>();
         }
 
-        /// <summary>Placeholder until the Purchasing module is connected.</summary>
-        private void mnuPurchasing_Click(object sender, EventArgs e) { NotBuilt("Purchasing"); }
+        /// <summary>Opens the purchasing module.</summary>
+        private void mnuPurchasing_Click(object sender, EventArgs e)
+        {
+            OpenChild<frmPurchasing>();
+        }
 
         /// <summary>Placeholder until the Inventory module is connected.</summary>
         private void mnuInventory_Click(object sender, EventArgs e) { NotBuilt("Inventory"); }
 
-        /// <summary>Placeholder until the Delivery module is connected.</summary>
-        private void mnuDelivery_Click(object sender, EventArgs e) { NotBuilt("Delivery"); }
+        /// <summary>Opens the delivery module.</summary>
+        private void mnuDelivery_Click(object sender, EventArgs e)
+        {
+            OpenChild<frmDelivery>();
+        }
 
         /// <summary>Shows a "not connected yet" message for a module that has no screens yet.</summary>
         private void NotBuilt(string module)

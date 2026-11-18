@@ -24,5 +24,17 @@ namespace SolarWorldERP.Data
 
         /// <summary>The RequisitionItems (RF lines) table.</summary>
         public Table<RequisitionItem> RequisitionItems { get { return GetTable<RequisitionItem>(); } }
+
+        /// <summary>The PurchaseOrders table.</summary>
+        public Table<PurchaseOrder> PurchaseOrders { get { return GetTable<PurchaseOrder>(); } }
+
+        /// <summary>The PurchaseOrderLines table.</summary>
+        public Table<PurchaseOrderLine> PurchaseOrderLines { get { return GetTable<PurchaseOrderLine>(); } }
+
+        /// <summary>The Deliveries table.</summary>
+        public Table<Delivery> Deliveries { get { return GetTable<Delivery>(); } }
+
+        /// <summary>The DeliveryLines table.</summary>
+        public Table<DeliveryLine> DeliveryLines { get { return GetTable<DeliveryLine>(); } }
     }
 }
