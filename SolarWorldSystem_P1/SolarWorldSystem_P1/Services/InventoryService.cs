@@ -1,10 +1,11 @@
-﻿using System;
+﻿using SolarWorldERP.Data;
+using SolarWorldERP.Helpers;
+using SolarWorldERP.Models;
+using System;
 using System.Collections.Generic;
 using System.Data.Linq;
 using System.Linq;
 using System.Transactions;
-using SolarWorldERP.Data;
-using SolarWorldERP.Helpers;
 
 namespace SolarWorldERP.Services
 {
@@ -20,6 +21,7 @@ namespace SolarWorldERP.Services
         public string StockTag { get; set; }
         public int QtyOnHand { get; set; }
         public int QtyReserved { get; set; }
+        public int QtyIncoming { get; set; }
         public int QtyAvailable { get; set; }
         public bool IsScarce { get; set; }
         public int ReorderPoint { get; set; }
@@ -198,6 +200,115 @@ namespace SolarWorldERP.Services
         {
             if (!allowedRoles.Contains(Session.Role))
                 throw new UnauthorizedAccessException("Your role (" + Session.Role + ") is not allowed to perform this action.");
+        }
+
+        /// <summary>
+        /// Returns total unreceived ordered quantity per ItemId across non-cancelled PurchaseOrders.
+        /// Connects Inventory visibility to the Purchasing module without duplicating receiving logic.
+        /// </summary>
+        public Dictionary<int, int> GetIncomingQtyByItem()
+        {
+            using (var db = new ErpDataContext())
+            {
+                var openStatuses = new[] { "Draft", "Ordered", "PartiallyReceived" };
+
+                return (from l in db.PurchaseOrderLines
+                        join o in db.PurchaseOrders on l.PurchaseOrderId equals o.PurchaseOrderId
+                        where openStatuses.Contains(o.Status) && l.QtyOrdered > l.QtyReceived
+                        group new { l.QtyOrdered, l.QtyReceived } by l.ItemId into g
+                        select new
+                        {
+                            ItemId = g.Key,
+                            IncomingQty = g.Sum(x => x.QtyOrdered - x.QtyReceived)
+                        })
+                        .ToDictionary(x => x.ItemId, x => x.IncomingQty);
+            }
+        }
+        /// <summary>
+        /// Returns requisitions that are Approved or PendingFulfillment and have reserved stock ready to issue.
+        /// </summary>
+        public List<RfListRow> GetIssuableRequisitions()
+        {
+            using (var db = new ErpDataContext())
+            {
+                var issuableStatuses = new[] { "Approved", "PendingFulfillment" };
+
+                return db.Requisitions
+                    .Where(r => issuableStatuses.Contains(r.Status))
+                    .OrderByDescending(r => r.DateCreated)
+                    .Select(r => new RfListRow
+                    {
+                        RfId = r.RfId,
+                        RfNumber = r.RfNumber,
+                        ProjectName = r.ProjectName,
+                        RequestedBy = r.RequestedBy,
+                        DateCreated = r.DateCreated,
+                        Status = r.Status
+                    })
+                    .ToList();
+            }
+        }
+
+        /// <summary>
+        /// Issues reserved stock for an Approved or PendingFulfillment requisition:
+        /// deducts QtyReserved from QtyOnHand and QtyReserved, zeroes line QtyReserved,
+        /// and sets Requisition.Status to "Fulfilled" in one serializable transaction.
+        /// </summary>
+        public void IssueRequisition(int rfId)
+        {
+            RequireRole("Staff", "Owner");
+
+            var options = new TransactionOptions { IsolationLevel = System.Transactions.IsolationLevel.Serializable };
+            try
+            {
+                using (var scope = new TransactionScope(TransactionScopeOption.Required, options))
+                using (var db = new ErpDataContext())
+                {
+                    var rf = db.Requisitions.SingleOrDefault(r => r.RfId == rfId);
+                    if (rf == null)
+                        throw new InvalidOperationException("Requisition not found.");
+
+                    if (rf.Status != "Approved" && rf.Status != "PendingFulfillment")
+                        throw new InvalidOperationException(
+                            rf.RfNumber + " cannot be issued while status is " + rf.Status + ".");
+
+                    var lines = db.RequisitionItems.Where(l => l.RfId == rfId).ToList();
+                    if (lines.Count == 0)
+                        throw new InvalidOperationException("Requisition has no items to issue.");
+
+                    if (lines.Any(l => l.QtyShortage > 0))
+                        throw new InvalidOperationException(
+                            rf.RfNumber + " still has unfulfilled item shortages and cannot be issued yet.");
+
+                    foreach (var line in lines)
+                    {
+                        if (line.QtyReserved <= 0) continue;
+
+                        var item = db.Items.SingleOrDefault(i => i.ItemId == line.ItemId);
+                        if (item == null)
+                            throw new InvalidOperationException("Referenced inventory item not found.");
+
+
+                        if (item.QtyOnHand < line.QtyReserved || item.QtyReserved < line.QtyReserved)
+                            throw new InvalidOperationException(
+                                "Insufficient stock on hand or reserved quantity for " + item.ItemName + ".");
+
+                        item.QtyOnHand -= line.QtyReserved;
+                        item.QtyReserved -= line.QtyReserved;
+                        line.QtyReserved = 0;
+                    }
+
+
+                    rf.Status = RfStatus.Fulfilled.ToString();
+                    db.SubmitChanges();
+                    scope.Complete();
+                }
+            }
+            catch (ChangeConflictException)
+            {
+                throw new InvalidOperationException(
+                    "Another user updated inventory or this requisition at the same time. Please try again.");
+            }
         }
     }
 }
