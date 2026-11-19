@@ -65,20 +65,32 @@ namespace SolarWorldERP.Data
         [Column] public int QtyShortage { get; set; }
     }
 
-    [Table(Name = "dbo.PurchaseOrder")]
+    /// <summary>A company we buy from (table dbo.Suppliers).</summary>
+    [Table(Name = "dbo.Suppliers")]
+    public class Supplier
+    {
+        [Column(IsPrimaryKey = true, IsDbGenerated = true)] public int SupplierId { get; set; }
+        [Column] public string SupplierName { get; set; }
+        [Column(CanBeNull = true)] public string ContactInfo { get; set; }
+        [Column] public bool IsActive { get; set; }
+    }
+
+    /// <summary>The header of a purchase order (table dbo.PurchaseOrders). Status: Draft, Ordered, PartiallyReceived, Completed, Cancelled.</summary>
+    [Table(Name = "dbo.PurchaseOrders")]
     public class PurchaseOrder
     {
         [Column(IsPrimaryKey = true, IsDbGenerated = true)] public int PurchaseOrderId { get; set; }
-        [Column] public string PONumber { get; set; }
-        [Column] public string SupplierName { get; set; }
-        [Column] public string RequestedBy { get; set; }
+        [Column] public string PoNumber { get; set; }
+        [Column] public int SupplierId { get; set; }
+        [Column(CanBeNull = true)] public int? RfId { get; set; }
         [Column] public string Status { get; set; }
         [Column] public DateTime DateCreated { get; set; }
-        [Column(CanBeNull = true)] public DateTime? DateApproved { get; set; }
-        [Column(CanBeNull = true)] public DateTime? DateOrdered { get; set; }
-        [Column] public decimal TotalAmount { get; set; }
+        [Column(CanBeNull = true)] public string CreatedBy { get; set; }
+        [Column(CanBeNull = true)] public DateTime? ExpectedDate { get; set; }
+        [Column(CanBeNull = true)] public string Remarks { get; set; }
     }
 
+    /// <summary>One item line inside a purchase order (table dbo.PurchaseOrderLines). UnitCost is optional.</summary>
     [Table(Name = "dbo.PurchaseOrderLines")]
     public class PurchaseOrderLine
     {
@@ -87,10 +99,11 @@ namespace SolarWorldERP.Data
         [Column] public int ItemId { get; set; }
         [Column] public int QtyOrdered { get; set; }
         [Column] public int QtyReceived { get; set; }
-        [Column] public decimal UnitCost { get; set; }
+        [Column(CanBeNull = true)] public decimal? UnitCost { get; set; }
     }
 
-    [Table(Name = "dbo.Delivery")]
+    /// <summary>A delivery of a purchase order (table dbo.Deliveries). Status: Scheduled, InTransit, Delivered, Cancelled.</summary>
+    [Table(Name = "dbo.Deliveries")]
     public class Delivery
     {
         [Column(IsPrimaryKey = true, IsDbGenerated = true)] public int DeliveryId { get; set; }
@@ -104,6 +117,7 @@ namespace SolarWorldERP.Data
         [Column(CanBeNull = true)] public string Notes { get; set; }
     }
 
+    /// <summary>What was actually delivered for each purchase order line (table dbo.DeliveryLines).</summary>
     [Table(Name = "dbo.DeliveryLines")]
     public class DeliveryLine
     {

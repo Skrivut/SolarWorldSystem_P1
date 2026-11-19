@@ -1,113 +1,228 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
-using SolarWorldERP.Data;
+using SolarWorldERP.Helpers;
 using SolarWorldERP.Services;
 
 namespace SolarWorldERP.Forms
 {
-    public class frmPurchasing : Form
+    // The logic of the purchasing screen. The layout lives in frmPurchasing.Designer.cs.
+    public partial class frmPurchasing : Form
     {
-        private readonly PurchasingService _service = new PurchasingService();
-        private readonly DataGridView _products = new DataGridView();
-        private readonly DataGridView _orders = new DataGridView();
-        private readonly TextBox _supplier = new TextBox();
-        private readonly NumericUpDown _quantity = new NumericUpDown();
-        private readonly Button _create = new Button();
-        private readonly Button _approve = new Button();
-        private readonly Button _send = new Button();
+        private readonly PurchasingService _purchasing = new PurchasingService();
+        private Dictionary<int, string> _supplierNames = new Dictionary<int, string>();
+        private Dictionary<int, string> _itemNames = new Dictionary<int, string>();
 
         public frmPurchasing()
         {
-            Text = "Purchasing";
-            Width = 900;
-            Height = 600;
-            StartPosition = FormStartPosition.CenterParent;
-            BuildControls();
-            LoadData();
+            InitializeComponent();
         }
 
-        private void BuildControls()
+        private void frmPurchasing_Load(object sender, EventArgs e)
         {
-            var top = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 42, Padding = new Padding(6) };
-            top.Controls.Add(new Label { Text = "Supplier:", AutoSize = true, Padding = new Padding(0, 6, 0, 0) });
-            _supplier.Width = 150;
-            top.Controls.Add(_supplier);
-            top.Controls.Add(new Label { Text = "Quantity:", AutoSize = true, Padding = new Padding(10, 6, 0, 0) });
-            _quantity.Minimum = 1;
-            _quantity.Maximum = 100000;
-            _quantity.Value = 1;
-            top.Controls.Add(_quantity);
-            _create.Text = "Create Order";
-            _create.Click += CreateOrder;
-            top.Controls.Add(_create);
-            _approve.Text = "Approve Selected";
-            _approve.Click += ApproveOrder;
-            top.Controls.Add(_approve);
-            _send.Text = "Send to Supplier";
-            _send.Click += SendOrder;
-            top.Controls.Add(_send);
-            Controls.Add(top);
-
-            var split = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Horizontal, SplitterDistance = 250 };
-            ConfigureGrid(_products);
-            ConfigureGrid(_orders);
-            split.Panel1.Controls.Add(_products);
-            split.Panel2.Controls.Add(_orders);
-            Controls.Add(split);
-        }
-
-        private static void ConfigureGrid(DataGridView grid)
-        {
-            grid.Dock = DockStyle.Fill;
-            grid.ReadOnly = true;
-            grid.AllowUserToAddRows = false;
-            grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            grid.AutoGenerateColumns = true;
-        }
-
-        private void LoadData()
-        {
-            try
+            if (Session.Role != "Owner" && Session.Role != "Staff")
             {
-                _products.DataSource = _service.GetProducts();
-                _orders.DataSource = _service.GetOrders(null);
+                Warn("Only the owner and office staff can use purchasing.");
+                Close();
+                return;
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message, "Purchasing", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            colNewCost.DefaultCellStyle.Format = "N2";
+            Run(() => { LoadSuppliers(); LoadItems(); });
+            cboStatus.SelectedIndex = 0;   // this triggers the first load of the order list
         }
 
-        private void CreateOrder(object sender, EventArgs e)
+        // ---- Loading ----
+        private void LoadSuppliers()
         {
-            try
+            var all = _purchasing.GetSuppliers(false);
+            _supplierNames = all.ToDictionary(s => s.SupplierId, s => s.SupplierName);
+            cboSupplier.DataSource = all.Where(s => s.IsActive)
+                .Select(s => new { Id = s.SupplierId, Name = s.SupplierName }).ToList();
+            cboSupplier.DisplayMember = "Name";
+            cboSupplier.ValueMember = "Id";
+        }
+
+        private void LoadItems()
+        {
+            var items = _purchasing.GetItems();
+            _itemNames = items.ToDictionary(i => i.ItemId, i => i.ItemCode + " - " + i.ItemName);
+            cboItem.DataSource = items.Select(i => new { Id = i.ItemId, Name = i.ItemCode + " - " + i.ItemName }).ToList();
+            cboItem.DisplayMember = "Name";
+            cboItem.ValueMember = "Id";
+        }
+
+        private void LoadOrders()
+        {
+            Run(() =>
             {
-                if (_products.CurrentRow == null) throw new InvalidOperationException("Select a product first.");
-                var item = (Item)_products.CurrentRow.DataBoundItem;
-                var quantities = new Dictionary<int, int> { { item.ItemId, (int)_quantity.Value } };
-                var costs = new Dictionary<int, decimal> { { item.ItemId, 0 } };
-                _service.CreateOrder(_supplier.Text, quantities, costs);
-                LoadData();
-                MessageBox.Show("Purchase order created.", "Purchasing", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                var status = cboStatus.Text == "All" ? null : cboStatus.Text;
+                dgvOrders.DataSource = _purchasing.GetOrders(status).Select(o => new
+                {
+                    PurchaseOrderId = o.PurchaseOrderId,
+                    Number = o.PoNumber,
+                    Supplier = _supplierNames.ContainsKey(o.SupplierId) ? _supplierNames[o.SupplierId] : "",
+                    Status = o.Status,
+                    Created = o.DateCreated,
+                    Expected = o.ExpectedDate,
+                    Remarks = o.Remarks
+                }).ToList();
+                dgvOrders.Columns["PurchaseOrderId"].Visible = false;
+                dgvOrders.Columns["Created"].DefaultCellStyle.Format = "yyyy-MM-dd";
+                dgvOrders.Columns["Expected"].DefaultCellStyle.Format = "yyyy-MM-dd";
+            });
+            ShowOrder();
+        }
+
+        // Shows the items of the selected order and enables only the buttons that make sense for its status.
+        private void ShowOrder()
+        {
+            var id = SelectedOrderId();
+            var status = SelectedOrderStatus();
+            btnPlace.Enabled = status == "Draft";
+            btnCancelOrder.Enabled = status == "Draft" || status == "Ordered";
+            dgvOrderLines.DataSource = null;
+            if (id == 0) return;
+
+            Run(() =>
+            {
+                dgvOrderLines.DataSource = _purchasing.GetLines(id).Select(l => new
+                {
+                    Item = _itemNames.ContainsKey(l.ItemId) ? _itemNames[l.ItemId] : "Item " + l.ItemId,
+                    Ordered = l.QtyOrdered,
+                    Received = l.QtyReceived,
+                    UnitCost = l.UnitCost
+                }).ToList();
+                dgvOrderLines.Columns["UnitCost"].DefaultCellStyle.Format = "N2";
+            });
+        }
+
+        // ---- Order list events ----
+        private void cboStatus_SelectedIndexChanged(object sender, EventArgs e) { LoadOrders(); }
+
+        private void btnRefresh_Click(object sender, EventArgs e)
+        {
+            Run(() => { LoadSuppliers(); LoadItems(); });
+            LoadOrders();
+        }
+
+        private void dgvOrders_SelectionChanged(object sender, EventArgs e) { ShowOrder(); }
+
+        private void btnPlace_Click(object sender, EventArgs e)
+        {
+            var id = SelectedOrderId();
+            if (id == 0) return;
+            if (MessageBox.Show("Place this order with the supplier?", "Purchasing", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+            Run(() => { _purchasing.Place(id); LoadOrders(); });
+        }
+
+        private void btnCancelOrder_Click(object sender, EventArgs e)
+        {
+            var id = SelectedOrderId();
+            if (id == 0) return;
+            if (MessageBox.Show("Cancel this order?", "Purchasing", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+            Run(() => { _purchasing.Cancel(id); LoadOrders(); });
+        }
+
+        // ---- New order events ----
+        private void btnAddSupplier_Click(object sender, EventArgs e)
+        {
+            Run(() =>
+            {
+                var supplier = _purchasing.AddSupplier(txtNewSupplier.Text, null);
+                txtNewSupplier.Clear();
+                LoadSuppliers();
+                cboSupplier.SelectedValue = supplier.SupplierId;
+            });
+        }
+
+        private void btnAddLine_Click(object sender, EventArgs e)
+        {
+            if (cboItem.SelectedValue == null) { Warn("Choose an item."); return; }
+            var itemId = Convert.ToInt32(cboItem.SelectedValue);
+
+            // Unit cost is optional: leave it blank if the price is not known yet.
+            decimal? cost = null;
+            if (!string.IsNullOrWhiteSpace(txtCost.Text))
+            {
+                decimal parsed;
+                if (!decimal.TryParse(txtCost.Text, out parsed) || parsed < 0)
+                {
+                    Warn("Unit cost must be a number, or leave it blank.");
+                    return;
+                }
+                cost = parsed;
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message, "Purchasing", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            foreach (DataGridViewRow row in dgvNewLines.Rows)
+                if (Convert.ToInt32(row.Cells[colNewItemId.Index].Value) == itemId)
+                {
+                    Warn("That item is already on the order.");
+                    return;
+                }
+
+            dgvNewLines.Rows.Add(itemId, cboItem.Text, (int)numQty.Value, cost.HasValue ? (object)cost.Value : null);
+            numQty.Value = 1;
+            txtCost.Clear();
         }
 
-        private void ApproveOrder(object sender, EventArgs e)
+        private void btnRemoveLine_Click(object sender, EventArgs e)
         {
-            try { _service.Approve(GetSelectedOrderId()); LoadData(); }
-            catch (Exception ex) { MessageBox.Show(ex.Message, "Purchasing", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            if (dgvNewLines.CurrentRow != null) dgvNewLines.Rows.Remove(dgvNewLines.CurrentRow);
         }
 
-        private void SendOrder(object sender, EventArgs e)
+        private void btnCreate_Click(object sender, EventArgs e)
         {
-            try { _service.SendToSupplier(GetSelectedOrderId()); LoadData(); }
-            catch (Exception ex) { MessageBox.Show(ex.Message, "Purchasing", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            if (cboSupplier.SelectedValue == null) { Warn("Choose a supplier."); return; }
+            if (dgvNewLines.Rows.Count == 0) { Warn("Add at least one item to the order."); return; }
+
+            var lines = new List<PurchaseLineInput>();
+            foreach (DataGridViewRow row in dgvNewLines.Rows)
+            {
+                var rawCost = row.Cells[colNewCost.Index].Value;
+                lines.Add(new PurchaseLineInput
+                {
+                    ItemId = Convert.ToInt32(row.Cells[colNewItemId.Index].Value),
+                    Qty = Convert.ToInt32(row.Cells[colNewQty.Index].Value),
+                    UnitCost = rawCost == null ? (decimal?)null : Convert.ToDecimal(rawCost)
+                });
+            }
+            DateTime? expected = dtpExpected.Checked ? (DateTime?)dtpExpected.Value.Date : null;
+
+            Run(() =>
+            {
+                // The second argument (null) is the requisition this order covers; this screen does not link one yet.
+                var order = _purchasing.CreateOrder(Convert.ToInt32(cboSupplier.SelectedValue), null, expected, txtRemarks.Text, lines);
+                dgvNewLines.Rows.Clear();
+                txtRemarks.Clear();
+                LoadOrders();
+                MessageBox.Show("Purchase order " + order.PoNumber + " was created as a draft. Place it when you are ready to order.",
+                    "Purchasing", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            });
         }
 
-        private int GetSelectedOrderId()
+        // ---- Helpers ----
+        private int SelectedOrderId()
         {
-            if (_orders.CurrentRow == null) throw new InvalidOperationException("Select a purchase order first.");
-            return ((PurchaseOrder)_orders.CurrentRow.DataBoundItem).PurchaseOrderId;
+            if (dgvOrders.CurrentRow == null || !dgvOrders.Columns.Contains("PurchaseOrderId")) return 0;
+            return Convert.ToInt32(dgvOrders.CurrentRow.Cells["PurchaseOrderId"].Value);
+        }
+
+        private string SelectedOrderStatus()
+        {
+            if (dgvOrders.CurrentRow == null || !dgvOrders.Columns.Contains("Status")) return "";
+            return Convert.ToString(dgvOrders.CurrentRow.Cells["Status"].Value);
+        }
+
+        private void Warn(string message)
+        {
+            MessageBox.Show(message, "Purchasing", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        // Runs an action and shows any rule violation from the service in a message box.
+        private void Run(Action action)
+        {
+            try { action(); }
+            catch (Exception ex) { Warn(ex.Message); }
         }
     }
 }

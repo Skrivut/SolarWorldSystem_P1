@@ -60,6 +60,9 @@
     <Compile Include="Forms\frmDelivery.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Forms\frmDelivery.Designer.cs">
+      <DependentUpon>frmDelivery.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\frmLogin.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -74,6 +77,9 @@
     </Compile>
     <Compile Include="Forms\frmPurchasing.cs">
       <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\frmPurchasing.Designer.cs">
+      <DependentUpon>frmPurchasing.cs</DependentUpon>
     </Compile>
     <Compile Include="Forms\frmRequisition.cs">
       <SubType>Form</SubType>
