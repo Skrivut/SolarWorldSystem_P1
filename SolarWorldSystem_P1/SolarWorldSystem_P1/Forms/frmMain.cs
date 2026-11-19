@@ -68,8 +68,11 @@ namespace SolarWorldERP.Forms
             OpenChild<frmPurchasing>();
         }
 
-        /// <summary>Placeholder until the Inventory module is connected.</summary>
-        private void mnuInventory_Click(object sender, EventArgs e) { NotBuilt("Inventory"); }
+        /// <summary>Opens the inventory module.</summary>
+        private void mnuInventory_Click(object sender, EventArgs e)
+        {
+            OpenChild<frmInventory>();
+        }
 
         /// <summary>Opens the delivery module.</summary>
         private void mnuDelivery_Click(object sender, EventArgs e)
