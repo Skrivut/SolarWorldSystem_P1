@@ -1,98 +1,195 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Forms;
-using SolarWorldERP.Data;
+using SolarWorldERP.Helpers;
 using SolarWorldERP.Services;
 
 namespace SolarWorldERP.Forms
 {
-    public class frmDelivery : Form
+    // The logic of the delivery screen. The layout lives in frmDelivery.Designer.cs.
+    public partial class frmDelivery : Form
     {
-        private readonly DeliveryService _service = new DeliveryService();
-        private readonly DataGridView _deliveries = new DataGridView();
-        private readonly TextBox _address = new TextBox();
-        private readonly TextBox _driver = new TextBox();
-        private readonly DateTimePicker _expected = new DateTimePicker();
-        private readonly Button _schedule = new Button();
-        private readonly Button _transit = new Button();
-        private readonly Button _receive = new Button();
+        private readonly DeliveryService _deliveries = new DeliveryService();
+        private readonly PurchasingService _purchasing = new PurchasingService();
 
         public frmDelivery()
         {
-            Text = "Delivery";
-            Width = 900;
-            Height = 500;
-            StartPosition = FormStartPosition.CenterParent;
-            BuildControls();
-            LoadData();
+            InitializeComponent();
         }
 
-        private void BuildControls()
+        private bool CanManage
         {
-            var top = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 70, Padding = new Padding(6) };
-            top.Controls.Add(new Label { Text = "PO ID:", AutoSize = true, Padding = new Padding(0, 6, 0, 0) });
-            var poId = new NumericUpDown { Name = "poId", Minimum = 1, Maximum = 1000000, Width = 70 };
-            top.Controls.Add(poId);
-            top.Controls.Add(new Label { Text = "Address:", AutoSize = true, Padding = new Padding(8, 6, 0, 0) });
-            _address.Width = 150;
-            top.Controls.Add(_address);
-            top.Controls.Add(new Label { Text = "Driver:", AutoSize = true, Padding = new Padding(8, 6, 0, 0) });
-            _driver.Width = 110;
-            top.Controls.Add(_driver);
-            _expected.Format = DateTimePickerFormat.Short;
-            top.Controls.Add(_expected);
-            _schedule.Text = "Schedule";
-            _schedule.Click += delegate { Schedule((int)poId.Value); };
-            top.Controls.Add(_schedule);
-            _transit.Text = "Mark In Transit";
-            _transit.Click += MarkInTransit;
-            top.Controls.Add(_transit);
-            _receive.Text = "Receive Selected";
-            _receive.Click += Receive;
-            top.Controls.Add(_receive);
-            Controls.Add(top);
-
-            _deliveries.Dock = DockStyle.Fill;
-            _deliveries.ReadOnly = true;
-            _deliveries.AllowUserToAddRows = false;
-            _deliveries.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            _deliveries.AutoGenerateColumns = true;
-            Controls.Add(_deliveries);
+            get { return Session.Role == "Owner" || Session.Role == "Staff"; }
         }
 
-        private void LoadData()
+        private void frmDelivery_Load(object sender, EventArgs e)
         {
-            try { _deliveries.DataSource = _service.GetDeliveries(null); }
-            catch (Exception ex) { MessageBox.Show(ex.Message, "Delivery", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            grpSchedule.Visible = CanManage;   // drivers can only move and receive deliveries
+            btnCancel.Visible = CanManage;
+            dtpExpected.Value = DateTime.Today.AddDays(1);
+            if (CanManage) LoadOpenOrders();
+            cboStatus.SelectedIndex = 0;       // this triggers the first load of the list
         }
 
-        private void Schedule(int purchaseOrderId)
+        // ---- Loading ----
+        private void LoadDeliveries()
         {
-            try { _service.Schedule(purchaseOrderId, _address.Text, _expected.Value, _driver.Text); LoadData(); }
-            catch (Exception ex) { MessageBox.Show(ex.Message, "Delivery", MessageBoxButtons.OK, MessageBoxIcon.Error); }
-        }
-
-        private void MarkInTransit(object sender, EventArgs e)
-        {
-            try { _service.MarkInTransit(GetSelectedDeliveryId()); LoadData(); }
-            catch (Exception ex) { MessageBox.Show(ex.Message, "Delivery", MessageBoxButtons.OK, MessageBoxIcon.Error); }
-        }
-
-        private void Receive(object sender, EventArgs e)
-        {
-            try
+            Run(() =>
             {
-                var delivery = GetSelectedDeliveryId();
-                var message = "Enter the delivery line ID and quantity in code or a future detail screen.";
-                MessageBox.Show(message, "Delivery", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            catch (Exception ex) { MessageBox.Show(ex.Message, "Delivery", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+                var status = cboStatus.Text == "All" ? null : cboStatus.Text;
+                var numbers = _deliveries.GetOrderNumbers();
+                dgvDeliveries.DataSource = _deliveries.GetDeliveries(status).Select(d => new
+                {
+                    DeliveryId = d.DeliveryId,
+                    Number = d.DeliveryNumber,
+                    PurchaseOrder = numbers.ContainsKey(d.PurchaseOrderId) ? numbers[d.PurchaseOrderId] : "",
+                    Status = d.Status,
+                    Expected = d.ExpectedDate,
+                    Driver = d.DriverName,
+                    Address = d.DeliveryAddress,
+                    Delivered = d.DeliveredDate
+                }).ToList();
+                dgvDeliveries.Columns["DeliveryId"].Visible = false;
+                dgvDeliveries.Columns["Expected"].DefaultCellStyle.Format = "yyyy-MM-dd";
+                dgvDeliveries.Columns["Delivered"].DefaultCellStyle.Format = "yyyy-MM-dd HH:mm";
+            });
+            ShowSelected();
         }
 
-        private int GetSelectedDeliveryId()
+        private void LoadOpenOrders()
         {
-            if (_deliveries.CurrentRow == null) throw new InvalidOperationException("Select a delivery first.");
-            return ((Delivery)_deliveries.CurrentRow.DataBoundItem).DeliveryId;
+            Run(() =>
+            {
+                var orders = _purchasing.GetOrders("Ordered")
+                    .Concat(_purchasing.GetOrders("PartiallyReceived"))
+                    .Select(o => new { Id = o.PurchaseOrderId, Number = o.PoNumber })
+                    .ToList();
+                cboOrder.DataSource = orders;
+                cboOrder.DisplayMember = "Number";
+                cboOrder.ValueMember = "Id";
+            });
+        }
+
+        // Shows the items of the selected delivery and enables only the buttons that make sense for its status.
+        private void ShowSelected()
+        {
+            dgvLines.Rows.Clear();
+            var id = SelectedDeliveryId();
+            var status = SelectedStatus();
+            var open = status == "Scheduled" || status == "InTransit";
+            btnInTransit.Enabled = status == "Scheduled";
+            btnReceive.Enabled = open;
+            btnCancel.Enabled = open;
+            colReceiveNow.ReadOnly = !open;
+            if (id == 0) return;
+
+            Run(() =>
+            {
+                foreach (var l in _deliveries.GetReceivableLines(id))
+                    dgvLines.Rows.Add(l.PurchaseOrderLineId, l.ItemCode + " - " + l.ItemName,
+                        l.QtyOrdered, l.QtyReceived, l.QtyRemaining, open ? l.QtyRemaining : 0);
+            });
+        }
+
+        // ---- Events ----
+        private void cboStatus_SelectedIndexChanged(object sender, EventArgs e) { LoadDeliveries(); }
+
+        private void btnRefresh_Click(object sender, EventArgs e)
+        {
+            if (CanManage) LoadOpenOrders();
+            LoadDeliveries();
+        }
+
+        private void dgvDeliveries_SelectionChanged(object sender, EventArgs e) { ShowSelected(); }
+
+        private void btnSchedule_Click(object sender, EventArgs e)
+        {
+            Run(() =>
+            {
+                if (cboOrder.SelectedValue == null) throw new InvalidOperationException("Choose a purchase order.");
+                _deliveries.Schedule(Convert.ToInt32(cboOrder.SelectedValue), txtAddress.Text, dtpExpected.Value, txtDriver.Text);
+                txtAddress.Clear();
+                txtDriver.Clear();
+                LoadDeliveries();
+            });
+        }
+
+        private void btnInTransit_Click(object sender, EventArgs e)
+        {
+            var id = SelectedDeliveryId();
+            if (id == 0) return;
+            Run(() => { _deliveries.MarkInTransit(id); LoadDeliveries(); });
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            var id = SelectedDeliveryId();
+            if (id == 0) return;
+            if (MessageBox.Show("Cancel this delivery?", "Deliveries", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+            Run(() => { _deliveries.Cancel(id); LoadDeliveries(); });
+        }
+
+        private void btnReceive_Click(object sender, EventArgs e)
+        {
+            var id = SelectedDeliveryId();
+            if (id == 0) return;
+            dgvLines.EndEdit();
+
+            // Collect the "Receive now" column; blank or 0 means nothing arrived for that item.
+            var quantities = new Dictionary<int, int>();
+            foreach (DataGridViewRow row in dgvLines.Rows)
+            {
+                var text = Convert.ToString(row.Cells[colReceiveNow.Index].Value);
+                if (string.IsNullOrWhiteSpace(text)) continue;
+                int qty;
+                if (!int.TryParse(text, out qty) || qty < 0)
+                {
+                    Warn("Quantities must be whole numbers.");
+                    return;
+                }
+                if (qty > 0) quantities[Convert.ToInt32(row.Cells[colLineId.Index].Value)] = qty;
+            }
+            if (quantities.Count == 0)
+            {
+                Warn("Enter a quantity for at least one item.");
+                return;
+            }
+            if (MessageBox.Show("Add these items to stock and mark the delivery as received?", "Deliveries",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+
+            Run(() =>
+            {
+                _deliveries.Receive(id, quantities, txtNotes.Text);
+                txtNotes.Clear();
+                if (CanManage) LoadOpenOrders();
+                LoadDeliveries();
+            });
+        }
+
+        // ---- Helpers ----
+        private int SelectedDeliveryId()
+        {
+            if (dgvDeliveries.CurrentRow == null || !dgvDeliveries.Columns.Contains("DeliveryId")) return 0;
+            return Convert.ToInt32(dgvDeliveries.CurrentRow.Cells["DeliveryId"].Value);
+        }
+
+        private string SelectedStatus()
+        {
+            if (dgvDeliveries.CurrentRow == null || !dgvDeliveries.Columns.Contains("Status")) return "";
+            return Convert.ToString(dgvDeliveries.CurrentRow.Cells["Status"].Value);
+        }
+
+        private void Warn(string message)
+        {
+            MessageBox.Show(message, "Deliveries", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        // Runs an action and shows any rule violation from the service in a message box.
+        private void Run(Action action)
+        {
+            try { action(); }
+            catch (Exception ex) { Warn(ex.Message); }
         }
     }
 }

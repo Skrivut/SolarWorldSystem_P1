@@ -81,6 +81,9 @@
     <Compile Include="Forms\frmPurchasing.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Forms\frmPurchasing.Designer.cs">
+      <DependentUpon>frmPurchasing.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\frmRequisition.cs">
       <SubType>Form</SubType>
     </Compile>
