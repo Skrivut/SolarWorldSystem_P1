@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using SolarWorldERP.Models;
 using SolarWorldERP.Services;
 
 namespace SolarWorldERP.Forms
@@ -32,6 +34,7 @@ namespace SolarWorldERP.Forms
             _isLoading = false;
 
             LoadInventory();
+            LoadIssuableRequisitions();
         }
 
         private void FilterChanged(object sender, EventArgs e)
@@ -43,6 +46,7 @@ namespace SolarWorldERP.Forms
         private void btnRefresh_Click(object sender, EventArgs e)
         {
             LoadInventory();
+            LoadIssuableRequisitions();
         }
 
         private void LoadInventory()
@@ -51,6 +55,13 @@ namespace SolarWorldERP.Forms
             {
                 string tag = cboStockTag.SelectedItem != null ? cboStockTag.SelectedItem.ToString() : "All";
                 var items = _service.GetItems(tag, txtSearch.Text, chkLowStockOnly.Checked);
+                Dictionary<int, int> incomingMap = _service.GetIncomingQtyByItem();
+
+                foreach (var item in items)
+                {
+                    int incoming;
+                    item.QtyIncoming = incomingMap.TryGetValue(item.ItemId, out incoming) ? incoming : 0;
+                }
 
                 gridInventory.DataSource = items;
 
@@ -64,6 +75,53 @@ namespace SolarWorldERP.Forms
             {
                 MessageBox.Show("Failed to load inventory: " + ex.Message, "SolarWorld ERP",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void LoadIssuableRequisitions()
+        {
+            try
+            {
+                List<RfListRow> list = _service.GetIssuableRequisitions();
+                cboIssuableRf.DisplayMember = "RfNumber";
+                cboIssuableRf.ValueMember = "RfId";
+                cboIssuableRf.DataSource = list;
+                btnIssueRf.Enabled = list.Count > 0;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Failed to load requisitions for issuance: " + ex.Message, "SolarWorld ERP",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnIssueRf_Click(object sender, EventArgs e)
+        {
+            if (cboIssuableRf.SelectedValue == null) return;
+
+            int rfId = Convert.ToInt32(cboIssuableRf.SelectedValue);
+            string rfNumber = cboIssuableRf.Text;
+
+            var confirm = MessageBox.Show(
+                "Issue reserved stock for " + rfNumber + " and mark it as Fulfilled?",
+                "Confirm Issuance",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (confirm != DialogResult.Yes) return;
+
+            try
+            {
+                _service.IssueRequisition(rfId);
+                MessageBox.Show("Reserved stock issued for " + rfNumber + ".", "SolarWorld ERP",
+                                MessageBoxButtons.OK, MessageBoxIcon.Information);
+                LoadInventory();
+                LoadIssuableRequisitions();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "SolarWorld ERP",
+                                MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -81,7 +139,7 @@ namespace SolarWorldERP.Forms
             txtUnit.Text = row.Unit;
             cboEditTag.SelectedItem = row.StockTag;
             numInitialQty.Value = row.QtyOnHand;
-            numInitialQty.Enabled = false; // Existing stock changes only through Receiving or Issuance
+            numInitialQty.Enabled = false;
             numReorderPoint.Value = row.ReorderPoint;
             numMaxStock.Value = row.MaxStockLevel;
             chkIsScarce.Checked = row.IsScarce;

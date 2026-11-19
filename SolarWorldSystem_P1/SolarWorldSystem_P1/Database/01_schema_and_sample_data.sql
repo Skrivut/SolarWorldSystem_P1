@@ -1,9 +1,10 @@
--- SolarWorldERP: run this whole script in SSMS (connected to your SQL Server instance).
+-- SolarWorldERP: run this whole script in SSMS (connected to your SQL Server instance). Safe to re-run.
 IF DB_ID('SolarWorldERP') IS NULL CREATE DATABASE SolarWorldERP;
 GO
 USE SolarWorldERP;
 GO
 
+-- ===== Core tables =====
 IF OBJECT_ID('dbo.Users') IS NULL
 CREATE TABLE dbo.Users (
     UserId       INT IDENTITY PRIMARY KEY,
@@ -73,16 +74,16 @@ INSERT INTO dbo.Items (ItemCode, ItemName, Unit, StockTag, QtyOnHand, IsScarce, 
  ('SP-550-S', 'Solar Panel 550W (for sale)','pcs',  'ForSale', 10,  1, 5,  30);
 GO
 
--- ===== Purchasing & Delivery =====
-
--- Tracks which schema changes were applied, so future changes ship as new blocks
+-- ===== Schema version tracking: future changes are appended as new numbered blocks =====
 IF OBJECT_ID('dbo.SchemaVersion') IS NULL
 CREATE TABLE dbo.SchemaVersion (
     Version     INT PRIMARY KEY,
     Description VARCHAR(200) NOT NULL,
     AppliedOn   DATETIME NOT NULL DEFAULT GETDATE()
 );
+GO
 
+-- ===== Version 1: purchasing and delivery tables =====
 IF OBJECT_ID('dbo.Suppliers') IS NULL
 CREATE TABLE dbo.Suppliers (
     SupplierId   INT IDENTITY PRIMARY KEY,
@@ -97,14 +98,14 @@ CREATE TABLE dbo.PurchaseOrders (
     PoNumber     VARCHAR(20) NOT NULL UNIQUE,      -- e.g. PO-2026-0001
     SupplierId   INT NOT NULL REFERENCES dbo.Suppliers(SupplierId),
     RfId         INT NULL REFERENCES dbo.Requisitions(RfId),  -- set when ordering to cover an RF shortage
-    Status       VARCHAR(30) NOT NULL DEFAULT 'Draft',        -- Draft, Ordered, PartiallyReceived, Received, Cancelled (no CHECK, so new statuses need no schema change)
+    Status       VARCHAR(30) NOT NULL DEFAULT 'Draft',        -- no CHECK, so new statuses need no schema change
     DateCreated  DATETIME NOT NULL DEFAULT GETDATE(),
     CreatedBy    VARCHAR(100) NULL,
     ExpectedDate DATE NULL,
     Remarks      VARCHAR(255) NULL
 );
 
-IF OBJECT_ID('dbo.PurchaseOrderItems') IS NULL
+IF OBJECT_ID('dbo.PurchaseOrderItems') IS NULL AND OBJECT_ID('dbo.PurchaseOrderLines') IS NULL
 CREATE TABLE dbo.PurchaseOrderItems (
     PoItemId    INT IDENTITY PRIMARY KEY,
     PoId        INT NOT NULL REFERENCES dbo.PurchaseOrders(PoId),
@@ -117,13 +118,74 @@ CREATE TABLE dbo.PurchaseOrderItems (
 IF OBJECT_ID('dbo.Deliveries') IS NULL
 CREATE TABLE dbo.Deliveries (
     DeliveryId      INT IDENTITY PRIMARY KEY,
-    DeliveryNumber  VARCHAR(20) NOT NULL UNIQUE,   -- e.g. DR-2026-0001
+    DeliveryNumber  VARCHAR(20) NOT NULL UNIQUE,
     RfId            INT NOT NULL REFERENCES dbo.Requisitions(RfId),
     DriverUserId    INT NULL REFERENCES dbo.Users(UserId),
-    Status          VARCHAR(30) NOT NULL DEFAULT 'Scheduled',  -- Scheduled, OutForDelivery, Delivered, Failed, Cancelled
+    Status          VARCHAR(30) NOT NULL DEFAULT 'Scheduled',
     DateScheduled   DATETIME NULL,
     DateDelivered   DATETIME NULL,
     ReceivedBy      VARCHAR(100) NULL,
     Remarks         VARCHAR(255) NULL
 );
 GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE Version = 1)
+INSERT INTO dbo.SchemaVersion (Version, Description) VALUES (1, 'Purchasing and delivery tables');
+GO
+
+-- ===== Version 2: align purchasing/delivery tables with DeliveryService =====
+IF OBJECT_ID('dbo.PurchaseOrderItems') IS NOT NULL AND OBJECT_ID('dbo.PurchaseOrderLines') IS NULL
+    EXEC sp_rename 'dbo.PurchaseOrderItems', 'PurchaseOrderLines';
+IF COL_LENGTH('dbo.PurchaseOrders', 'PoId') IS NOT NULL
+    EXEC sp_rename 'dbo.PurchaseOrders.PoId', 'PurchaseOrderId', 'COLUMN';
+IF COL_LENGTH('dbo.PurchaseOrderLines', 'PoItemId') IS NOT NULL
+    EXEC sp_rename 'dbo.PurchaseOrderLines.PoItemId', 'PurchaseOrderLineId', 'COLUMN';
+IF COL_LENGTH('dbo.PurchaseOrderLines', 'PoId') IS NOT NULL
+    EXEC sp_rename 'dbo.PurchaseOrderLines.PoId', 'PurchaseOrderId', 'COLUMN';
+GO
+
+-- Deliveries now hang off a purchase order. Rebuilt only if it is still empty.
+IF COL_LENGTH('dbo.Deliveries', 'RfId') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM dbo.Deliveries)
+        THROW 50001, 'Deliveries has rows in the old layout. Migrate them manually first.', 1;
+    DROP TABLE dbo.Deliveries;
+END
+
+IF OBJECT_ID('dbo.Deliveries') IS NULL
+CREATE TABLE dbo.Deliveries (
+    DeliveryId      INT IDENTITY PRIMARY KEY,
+    DeliveryNumber  VARCHAR(20)  NOT NULL UNIQUE,   -- DEL-2026-0001
+    PurchaseOrderId INT          NOT NULL REFERENCES dbo.PurchaseOrders(PurchaseOrderId),
+    DeliveryAddress VARCHAR(255) NOT NULL,
+    DriverName      VARCHAR(100) NULL,
+    Status          VARCHAR(30)  NOT NULL DEFAULT 'Scheduled',  -- Scheduled, InTransit, Delivered
+    ExpectedDate    DATETIME     NULL,
+    DeliveredDate   DATETIME     NULL,
+    Notes           VARCHAR(255) NULL
+);
+GO
+
+IF OBJECT_ID('dbo.DeliveryLines') IS NULL
+CREATE TABLE dbo.DeliveryLines (
+    DeliveryLineId      INT IDENTITY PRIMARY KEY,
+    DeliveryId          INT NOT NULL REFERENCES dbo.Deliveries(DeliveryId),
+    PurchaseOrderLineId INT NOT NULL REFERENCES dbo.PurchaseOrderLines(PurchaseOrderLineId),
+    QtyDelivered        INT NOT NULL CHECK (QtyDelivered > 0)
+);
+GO
+
+-- PurchaseOrders.Status values used by the service: Ordered, PartiallyReceived, Completed.
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE Version = 2)
+INSERT INTO dbo.SchemaVersion (Version, Description) VALUES (2, 'Align purchasing and delivery tables with DeliveryService');
+GO
+
+/* ---- TEMPLATE for future changes: append a new block like this, never edit the blocks above ----
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE Version = 3)
+BEGIN
+    IF COL_LENGTH('dbo.Deliveries', 'VehiclePlate') IS NULL
+        EXEC('ALTER TABLE dbo.Deliveries ADD VehiclePlate VARCHAR(20) NULL');
+    INSERT INTO dbo.SchemaVersion (Version, Description) VALUES (3, 'Add vehicle plate to deliveries');
+END
+GO
+-------------------------------------------------------------------------------------------------- */

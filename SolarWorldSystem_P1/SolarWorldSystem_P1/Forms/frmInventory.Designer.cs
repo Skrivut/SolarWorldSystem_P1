@@ -32,11 +32,15 @@
             this.colQtyOnHand = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colQtyReserved = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colQtyAvailable = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colQtyIncoming = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colReorderPoint = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colMaxStockLevel = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colIsScarce = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.colIsLowStock = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.lblSummary = new System.Windows.Forms.Label();
+            this.lblIssueRf = new System.Windows.Forms.Label();
+            this.cboIssuableRf = new System.Windows.Forms.ComboBox();
+            this.btnIssueRf = new System.Windows.Forms.Button();
             this.grpEditor = new System.Windows.Forms.GroupBox();
             this.lblMode = new System.Windows.Forms.Label();
             this.lblCode = new System.Windows.Forms.Label();
@@ -139,6 +143,7 @@
             this.colQtyOnHand,
             this.colQtyReserved,
             this.colQtyAvailable,
+            this.colQtyIncoming,
             this.colReorderPoint,
             this.colMaxStockLevel,
             this.colIsScarce,
@@ -149,7 +154,7 @@
             this.gridInventory.ReadOnly = true;
             this.gridInventory.RowHeadersVisible = false;
             this.gridInventory.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.gridInventory.Size = new System.Drawing.Size(868, 340);
+            this.gridInventory.Size = new System.Drawing.Size(868, 312);
             this.gridInventory.TabIndex = 6;
             this.gridInventory.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.gridInventory_CellFormatting);
             this.gridInventory.SelectionChanged += new System.EventHandler(this.gridInventory_SelectionChanged);
@@ -173,7 +178,7 @@
             // colItemName
             // 
             this.colItemName.DataPropertyName = "ItemName";
-            this.colItemName.FillWeight = 160F;
+            this.colItemName.FillWeight = 155F;
             this.colItemName.HeaderText = "Item Name";
             this.colItemName.Name = "colItemName";
             this.colItemName.ReadOnly = true;
@@ -189,7 +194,7 @@
             // colStockTag
             // 
             this.colStockTag.DataPropertyName = "StockTag";
-            this.colStockTag.FillWeight = 75F;
+            this.colStockTag.FillWeight = 70F;
             this.colStockTag.HeaderText = "Tag";
             this.colStockTag.Name = "colStockTag";
             this.colStockTag.ReadOnly = true;
@@ -197,7 +202,7 @@
             // colQtyOnHand
             // 
             this.colQtyOnHand.DataPropertyName = "QtyOnHand";
-            this.colQtyOnHand.FillWeight = 70F;
+            this.colQtyOnHand.FillWeight = 68F;
             this.colQtyOnHand.HeaderText = "On Hand";
             this.colQtyOnHand.Name = "colQtyOnHand";
             this.colQtyOnHand.ReadOnly = true;
@@ -205,7 +210,7 @@
             // colQtyReserved
             // 
             this.colQtyReserved.DataPropertyName = "QtyReserved";
-            this.colQtyReserved.FillWeight = 70F;
+            this.colQtyReserved.FillWeight = 68F;
             this.colQtyReserved.HeaderText = "Reserved";
             this.colQtyReserved.Name = "colQtyReserved";
             this.colQtyReserved.ReadOnly = true;
@@ -213,15 +218,23 @@
             // colQtyAvailable
             // 
             this.colQtyAvailable.DataPropertyName = "QtyAvailable";
-            this.colQtyAvailable.FillWeight = 70F;
+            this.colQtyAvailable.FillWeight = 68F;
             this.colQtyAvailable.HeaderText = "Available";
             this.colQtyAvailable.Name = "colQtyAvailable";
             this.colQtyAvailable.ReadOnly = true;
             // 
+            // colQtyIncoming
+            // 
+            this.colQtyIncoming.DataPropertyName = "QtyIncoming";
+            this.colQtyIncoming.FillWeight = 68F;
+            this.colQtyIncoming.HeaderText = "Incoming";
+            this.colQtyIncoming.Name = "colQtyIncoming";
+            this.colQtyIncoming.ReadOnly = true;
+            // 
             // colReorderPoint
             // 
             this.colReorderPoint.DataPropertyName = "ReorderPoint";
-            this.colReorderPoint.FillWeight = 70F;
+            this.colReorderPoint.FillWeight = 68F;
             this.colReorderPoint.HeaderText = "Reorder Pt";
             this.colReorderPoint.Name = "colReorderPoint";
             this.colReorderPoint.ReadOnly = true;
@@ -229,7 +242,7 @@
             // colMaxStockLevel
             // 
             this.colMaxStockLevel.DataPropertyName = "MaxStockLevel";
-            this.colMaxStockLevel.FillWeight = 70F;
+            this.colMaxStockLevel.FillWeight = 68F;
             this.colMaxStockLevel.HeaderText = "Max Level";
             this.colMaxStockLevel.Name = "colMaxStockLevel";
             this.colMaxStockLevel.ReadOnly = true;
@@ -237,7 +250,7 @@
             // colIsScarce
             // 
             this.colIsScarce.DataPropertyName = "IsScarce";
-            this.colIsScarce.FillWeight = 55F;
+            this.colIsScarce.FillWeight = 52F;
             this.colIsScarce.HeaderText = "Scarce";
             this.colIsScarce.Name = "colIsScarce";
             this.colIsScarce.ReadOnly = true;
@@ -245,7 +258,7 @@
             // colIsLowStock
             // 
             this.colIsLowStock.DataPropertyName = "IsLowStock";
-            this.colIsLowStock.FillWeight = 65F;
+            this.colIsLowStock.FillWeight = 62F;
             this.colIsLowStock.HeaderText = "Low Alert";
             this.colIsLowStock.Name = "colIsLowStock";
             this.colIsLowStock.ReadOnly = true;
@@ -254,11 +267,42 @@
             // 
             this.lblSummary.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblSummary.AutoSize = true;
-            this.lblSummary.Location = new System.Drawing.Point(16, 392);
+            this.lblSummary.Location = new System.Drawing.Point(16, 366);
             this.lblSummary.Name = "lblSummary";
             this.lblSummary.Size = new System.Drawing.Size(75, 13);
             this.lblSummary.TabIndex = 7;
             this.lblSummary.Text = "Items loaded: 0";
+            // 
+            // lblIssueRf
+            // 
+            this.lblIssueRf.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblIssueRf.AutoSize = true;
+            this.lblIssueRf.Location = new System.Drawing.Point(430, 366);
+            this.lblIssueRf.Name = "lblIssueRf";
+            this.lblIssueRf.Size = new System.Drawing.Size(102, 13);
+            this.lblIssueRf.TabIndex = 8;
+            this.lblIssueRf.Text = "Issue Requisition RF:";
+            // 
+            // cboIssuableRf
+            // 
+            this.cboIssuableRf.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.cboIssuableRf.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cboIssuableRf.FormattingEnabled = true;
+            this.cboIssuableRf.Location = new System.Drawing.Point(538, 362);
+            this.cboIssuableRf.Name = "cboIssuableRf";
+            this.cboIssuableRf.Size = new System.Drawing.Size(220, 21);
+            this.cboIssuableRf.TabIndex = 9;
+            // 
+            // btnIssueRf
+            // 
+            this.btnIssueRf.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnIssueRf.Location = new System.Drawing.Point(764, 361);
+            this.btnIssueRf.Name = "btnIssueRf";
+            this.btnIssueRf.Size = new System.Drawing.Size(120, 23);
+            this.btnIssueRf.TabIndex = 10;
+            this.btnIssueRf.Text = "Issue Reserved Stock";
+            this.btnIssueRf.UseVisualStyleBackColor = true;
+            this.btnIssueRf.Click += new System.EventHandler(this.btnIssueRf_Click);
             // 
             // grpEditor
             // 
@@ -282,10 +326,10 @@
             this.grpEditor.Controls.Add(this.txtItemCode);
             this.grpEditor.Controls.Add(this.lblCode);
             this.grpEditor.Controls.Add(this.lblMode);
-            this.grpEditor.Location = new System.Drawing.Point(16, 414);
+            this.grpEditor.Location = new System.Drawing.Point(16, 392);
             this.grpEditor.Name = "grpEditor";
             this.grpEditor.Size = new System.Drawing.Size(868, 122);
-            this.grpEditor.TabIndex = 8;
+            this.grpEditor.TabIndex = 11;
             this.grpEditor.TabStop = false;
             this.grpEditor.Text = "Catalog Item Details";
             // 
@@ -449,11 +493,14 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(900, 550);
-            this.MinimumSize = new System.Drawing.Size(916, 589);
+            this.ClientSize = new System.Drawing.Size(900, 530);
+            this.MinimumSize = new System.Drawing.Size(916, 569);
             this.Name = "frmInventory";
             this.Text = "Inventory";
             this.Controls.Add(this.grpEditor);
+            this.Controls.Add(this.btnIssueRf);
+            this.Controls.Add(this.cboIssuableRf);
+            this.Controls.Add(this.lblIssueRf);
             this.Controls.Add(this.lblSummary);
             this.Controls.Add(this.gridInventory);
             this.Controls.Add(this.btnRefresh);
@@ -490,11 +537,15 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn colQtyOnHand;
         private System.Windows.Forms.DataGridViewTextBoxColumn colQtyReserved;
         private System.Windows.Forms.DataGridViewTextBoxColumn colQtyAvailable;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colQtyIncoming;
         private System.Windows.Forms.DataGridViewTextBoxColumn colReorderPoint;
         private System.Windows.Forms.DataGridViewTextBoxColumn colMaxStockLevel;
         private System.Windows.Forms.DataGridViewCheckBoxColumn colIsScarce;
         private System.Windows.Forms.DataGridViewCheckBoxColumn colIsLowStock;
         private System.Windows.Forms.Label lblSummary;
+        private System.Windows.Forms.Label lblIssueRf;
+        private System.Windows.Forms.ComboBox cboIssuableRf;
+        private System.Windows.Forms.Button btnIssueRf;
         private System.Windows.Forms.GroupBox grpEditor;
         private System.Windows.Forms.Label lblMode;
         private System.Windows.Forms.Label lblCode;
