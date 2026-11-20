@@ -192,7 +192,7 @@ namespace SolarWorldERP.Forms
                 if (result.HasShortage)
                 {
                     sb.AppendLine();
-                    sb.AppendLine("Some items are short. They will go to purchasing once that feature is connected.");
+                    sb.AppendLine("Some items are short. Once the owner approves, purchasing will order the shortage.");
                 }
                 MessageBox.Show(sb.ToString(), "Requisition", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
