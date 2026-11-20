@@ -72,6 +72,7 @@ namespace SolarWorldERP.Data
         [Column(IsPrimaryKey = true, IsDbGenerated = true)] public int SupplierId { get; set; }
         [Column] public string SupplierName { get; set; }
         [Column(CanBeNull = true)] public string ContactInfo { get; set; }
+        [Column(CanBeNull = true)] public string Address { get; set; }
         [Column] public bool IsActive { get; set; }
     }
 
@@ -88,6 +89,9 @@ namespace SolarWorldERP.Data
         [Column(CanBeNull = true)] public string CreatedBy { get; set; }
         [Column(CanBeNull = true)] public DateTime? ExpectedDate { get; set; }
         [Column(CanBeNull = true)] public string Remarks { get; set; }
+        [Column(CanBeNull = true)] public string ApprovedBy { get; set; }
+        [Column(CanBeNull = true)] public DateTime? DateApproved { get; set; }
+        [Column(CanBeNull = true)] public DateTime? DateClosed { get; set; }
     }
 
     /// <summary>One item line inside a purchase order (table dbo.PurchaseOrderLines). UnitCost is optional.</summary>
@@ -115,6 +119,12 @@ namespace SolarWorldERP.Data
         [Column(CanBeNull = true)] public DateTime? ExpectedDate { get; set; }
         [Column(CanBeNull = true)] public DateTime? DeliveredDate { get; set; }
         [Column(CanBeNull = true)] public string Notes { get; set; }
+        [Column(CanBeNull = true)] public string PickupAddress { get; set; }
+        [Column(CanBeNull = true)] public string SupplierDrNumber { get; set; }
+        [Column(CanBeNull = true)] public DateTime? PickedUpDate { get; set; }
+        [Column(CanBeNull = true)] public string ReportNumber { get; set; }
+        [Column(CanBeNull = true)] public string ReceivedBy { get; set; }
+        [Column(CanBeNull = true)] public DateTime? ReceivedDate { get; set; }
     }
 
     /// <summary>What was actually delivered for each purchase order line (table dbo.DeliveryLines).</summary>
@@ -125,5 +135,9 @@ namespace SolarWorldERP.Data
         [Column] public int DeliveryId { get; set; }
         [Column] public int PurchaseOrderLineId { get; set; }
         [Column] public int QtyDelivered { get; set; }
+        [Column] public int QtyAccepted { get; set; }
+        [Column] public int QtyRejected { get; set; }
+        [Column(CanBeNull = true)] public string RejectReason { get; set; }
+        [Column(CanBeNull = true)] public string DiscrepancyAction { get; set; }
     }
 }
