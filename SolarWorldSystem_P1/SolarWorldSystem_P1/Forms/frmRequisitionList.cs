@@ -100,6 +100,8 @@ namespace SolarWorldERP.Forms
             btnRevise.Enabled = canEdit && status == RfStatus.ReturnedForRevision.ToString();
             btnCancelRf.Enabled = canEdit &&
                 (status == RfStatus.Submitted.ToString() || status == RfStatus.ReturnedForRevision.ToString());
+            btnReserveShortage.Enabled = canEdit && _selected != null && _selected.HasShortage &&
+    (status == RfStatus.Approved.ToString() || status == RfStatus.PendingFulfillment.ToString());
         }
 
         /// <summary>"Review / Approve" (owner): opens the approval window for the selected RF, then refreshes the list.</summary>
@@ -139,6 +141,22 @@ namespace SolarWorldERP.Forms
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "Could not cancel", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnReserveShortage_Click(object sender, EventArgs e)
+        {
+            if (_selected == null) return;
+            try
+            {
+                int reserved = _service.ReserveShortage(_selected.RfId);
+                MessageBox.Show(reserved > 0 ? reserved + " unit(s) reserved." : "No free stock available for the shortage yet.",
+                                "Reserve stock", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                LoadList();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Could not reserve", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

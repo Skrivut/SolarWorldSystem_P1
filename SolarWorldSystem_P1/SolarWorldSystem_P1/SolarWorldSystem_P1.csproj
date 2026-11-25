@@ -110,6 +110,9 @@
     <Compile Include="Services\InventoryService.cs" />
     <Compile Include="Services\PurchasingService.cs" />
     <Compile Include="Services\RequisitionService.cs" />
+    <EmbeddedResource Include="Forms\frmRequisitionList.resx">
+      <DependentUpon>frmRequisitionList.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

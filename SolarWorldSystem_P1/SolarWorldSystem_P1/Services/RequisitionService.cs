@@ -269,6 +269,40 @@ namespace SolarWorldERP.Services
             });
         }
 
+        /// <summary>
+        /// Reserves stock that has arrived for an approved RF's shortage. For each short line it reserves
+        /// whatever is now available (on hand minus reserved), up to the shortage amount, and lowers the
+        /// shortage by that much. Once every shortage reaches 0 the RF can be issued.
+        /// Safe to call again later. Returns the total units newly reserved.
+        /// </summary>
+        public int ReserveShortage(int rfId)
+        {
+            RequireRole("Staff", "Owner");
+
+            return InTransaction(db =>
+            {
+                // Only Approved or PendingFulfillment RFs can have a shortage covered.
+                GetRfForChange(db, rfId, RfStatus.Approved, RfStatus.PendingFulfillment);
+
+                var shortLines = db.RequisitionItems.Where(l => l.RfId == rfId && l.QtyShortage > 0).ToList();
+
+                int totalReserved = 0;
+                foreach (var line in shortLines)
+                {
+                    var item = db.Items.Single(i => i.ItemId == line.ItemId);
+                    int available = Math.Max(0, item.QtyOnHand - item.QtyReserved);
+                    int reserve = Math.Min(available, line.QtyShortage);
+                    if (reserve <= 0) continue;
+
+                    item.QtyReserved += reserve;      // hold the stock for this RF
+                    line.QtyReserved += reserve;      // the line now holds more
+                    line.QtyShortage -= reserve;      // and is that much less short
+                    totalReserved += reserve;
+                }
+                return totalReserved;
+            });
+        }
+
         // ------------------------------------------------------------------
         //  Private helpers
         // ------------------------------------------------------------------
