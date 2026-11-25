@@ -18,31 +18,26 @@
             this.cboStatus = new System.Windows.Forms.ComboBox();
             this.btnRefresh = new System.Windows.Forms.Button();
             this.dgvDeliveries = new System.Windows.Forms.DataGridView();
-            this.grpSchedule = new System.Windows.Forms.GroupBox();
-            this.lblOrder = new System.Windows.Forms.Label();
-            this.cboOrder = new System.Windows.Forms.ComboBox();
-            this.lblAddress = new System.Windows.Forms.Label();
-            this.txtAddress = new System.Windows.Forms.TextBox();
-            this.lblExpected = new System.Windows.Forms.Label();
-            this.dtpExpected = new System.Windows.Forms.DateTimePicker();
-            this.lblDriver = new System.Windows.Forms.Label();
-            this.txtDriver = new System.Windows.Forms.TextBox();
-            this.btnSchedule = new System.Windows.Forms.Button();
             this.grpSelected = new System.Windows.Forms.GroupBox();
+            this.lblDr = new System.Windows.Forms.Label();
+            this.txtDr = new System.Windows.Forms.TextBox();
+            this.btnPickedUp = new System.Windows.Forms.Button();
+            this.btnDelivered = new System.Windows.Forms.Button();
+            this.btnCancel = new System.Windows.Forms.Button();
             this.dgvLines = new System.Windows.Forms.DataGridView();
             this.colLineId = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colItem = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colOrdered = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colReceived = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colRemaining = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.colReceiveNow = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colAccepted = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colRejected = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colReason = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colAction = new System.Windows.Forms.DataGridViewComboBoxColumn();
             this.lblNotes = new System.Windows.Forms.Label();
             this.txtNotes = new System.Windows.Forms.TextBox();
-            this.btnInTransit = new System.Windows.Forms.Button();
-            this.btnReceive = new System.Windows.Forms.Button();
-            this.btnCancel = new System.Windows.Forms.Button();
+            this.btnReport = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dgvDeliveries)).BeginInit();
-            this.grpSchedule.SuspendLayout();
             this.grpSelected.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvLines)).BeginInit();
             this.SuspendLayout();
@@ -57,7 +52,7 @@
             // cboStatus
             //
             this.cboStatus.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cboStatus.Items.AddRange(new object[] { "All", "Scheduled", "InTransit", "Delivered", "Cancelled" });
+            this.cboStatus.Items.AddRange(new object[] { "All", "Pending", "PickedUp", "Delivered", "Received", "Cancelled" });
             this.cboStatus.Location = new System.Drawing.Point(64, 12);
             this.cboStatus.Name = "cboStatus";
             this.cboStatus.Size = new System.Drawing.Size(130, 23);
@@ -84,106 +79,67 @@
             this.dgvDeliveries.ReadOnly = true;
             this.dgvDeliveries.RowHeadersVisible = false;
             this.dgvDeliveries.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dgvDeliveries.Size = new System.Drawing.Size(960, 190);
+            this.dgvDeliveries.Size = new System.Drawing.Size(960, 170);
             this.dgvDeliveries.SelectionChanged += new System.EventHandler(this.dgvDeliveries_SelectionChanged);
-            //
-            // grpSchedule
-            //
-            this.grpSchedule.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
-            this.grpSchedule.Controls.Add(this.lblOrder);
-            this.grpSchedule.Controls.Add(this.cboOrder);
-            this.grpSchedule.Controls.Add(this.lblAddress);
-            this.grpSchedule.Controls.Add(this.txtAddress);
-            this.grpSchedule.Controls.Add(this.lblExpected);
-            this.grpSchedule.Controls.Add(this.dtpExpected);
-            this.grpSchedule.Controls.Add(this.lblDriver);
-            this.grpSchedule.Controls.Add(this.txtDriver);
-            this.grpSchedule.Controls.Add(this.btnSchedule);
-            this.grpSchedule.Location = new System.Drawing.Point(12, 244);
-            this.grpSchedule.Name = "grpSchedule";
-            this.grpSchedule.Size = new System.Drawing.Size(960, 85);
-            this.grpSchedule.TabStop = false;
-            this.grpSchedule.Text = "Schedule a delivery";
-            //
-            // lblOrder
-            //
-            this.lblOrder.AutoSize = true;
-            this.lblOrder.Location = new System.Drawing.Point(10, 25);
-            this.lblOrder.Name = "lblOrder";
-            this.lblOrder.Text = "Purchase order:";
-            //
-            // cboOrder
-            //
-            this.cboOrder.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cboOrder.Location = new System.Drawing.Point(105, 21);
-            this.cboOrder.Name = "cboOrder";
-            this.cboOrder.Size = new System.Drawing.Size(140, 23);
-            //
-            // lblAddress
-            //
-            this.lblAddress.AutoSize = true;
-            this.lblAddress.Location = new System.Drawing.Point(265, 25);
-            this.lblAddress.Name = "lblAddress";
-            this.lblAddress.Text = "Address:";
-            //
-            // txtAddress
-            //
-            this.txtAddress.Location = new System.Drawing.Point(320, 21);
-            this.txtAddress.MaxLength = 255;
-            this.txtAddress.Name = "txtAddress";
-            this.txtAddress.Size = new System.Drawing.Size(280, 23);
-            //
-            // lblExpected
-            //
-            this.lblExpected.AutoSize = true;
-            this.lblExpected.Location = new System.Drawing.Point(620, 25);
-            this.lblExpected.Name = "lblExpected";
-            this.lblExpected.Text = "Expected:";
-            //
-            // dtpExpected
-            //
-            this.dtpExpected.Format = System.Windows.Forms.DateTimePickerFormat.Short;
-            this.dtpExpected.Location = new System.Drawing.Point(685, 21);
-            this.dtpExpected.Name = "dtpExpected";
-            this.dtpExpected.Size = new System.Drawing.Size(110, 23);
-            //
-            // lblDriver
-            //
-            this.lblDriver.AutoSize = true;
-            this.lblDriver.Location = new System.Drawing.Point(10, 55);
-            this.lblDriver.Name = "lblDriver";
-            this.lblDriver.Text = "Driver:";
-            //
-            // txtDriver
-            //
-            this.txtDriver.Location = new System.Drawing.Point(105, 51);
-            this.txtDriver.MaxLength = 100;
-            this.txtDriver.Name = "txtDriver";
-            this.txtDriver.Size = new System.Drawing.Size(140, 23);
-            //
-            // btnSchedule
-            //
-            this.btnSchedule.Location = new System.Drawing.Point(265, 49);
-            this.btnSchedule.Name = "btnSchedule";
-            this.btnSchedule.Size = new System.Drawing.Size(110, 27);
-            this.btnSchedule.Text = "Schedule";
-            this.btnSchedule.UseVisualStyleBackColor = true;
-            this.btnSchedule.Click += new System.EventHandler(this.btnSchedule_Click);
             //
             // grpSelected
             //
             this.grpSelected.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
+            this.grpSelected.Controls.Add(this.lblDr);
+            this.grpSelected.Controls.Add(this.txtDr);
+            this.grpSelected.Controls.Add(this.btnPickedUp);
+            this.grpSelected.Controls.Add(this.btnDelivered);
+            this.grpSelected.Controls.Add(this.btnCancel);
             this.grpSelected.Controls.Add(this.dgvLines);
             this.grpSelected.Controls.Add(this.lblNotes);
             this.grpSelected.Controls.Add(this.txtNotes);
-            this.grpSelected.Controls.Add(this.btnInTransit);
-            this.grpSelected.Controls.Add(this.btnReceive);
-            this.grpSelected.Controls.Add(this.btnCancel);
-            this.grpSelected.Location = new System.Drawing.Point(12, 335);
+            this.grpSelected.Controls.Add(this.btnReport);
+            this.grpSelected.Location = new System.Drawing.Point(12, 224);
             this.grpSelected.Name = "grpSelected";
-            this.grpSelected.Size = new System.Drawing.Size(960, 255);
+            this.grpSelected.Size = new System.Drawing.Size(960, 360);
             this.grpSelected.TabStop = false;
-            this.grpSelected.Text = "Selected delivery: type the quantity received for each item, then press Receive items";
+            this.grpSelected.Text = "Selected pickup: the driver collects and delivers; staff then check the goods and complete the receiving report";
+            //
+            // lblDr
+            //
+            this.lblDr.AutoSize = true;
+            this.lblDr.Location = new System.Drawing.Point(10, 28);
+            this.lblDr.Name = "lblDr";
+            this.lblDr.Text = "Supplier DR no.:";
+            //
+            // txtDr
+            //
+            this.txtDr.Location = new System.Drawing.Point(115, 24);
+            this.txtDr.MaxLength = 50;
+            this.txtDr.Name = "txtDr";
+            this.txtDr.Size = new System.Drawing.Size(150, 23);
+            //
+            // btnPickedUp
+            //
+            this.btnPickedUp.Location = new System.Drawing.Point(280, 22);
+            this.btnPickedUp.Name = "btnPickedUp";
+            this.btnPickedUp.Size = new System.Drawing.Size(140, 27);
+            this.btnPickedUp.Text = "Driver picked up";
+            this.btnPickedUp.UseVisualStyleBackColor = true;
+            this.btnPickedUp.Click += new System.EventHandler(this.btnPickedUp_Click);
+            //
+            // btnDelivered
+            //
+            this.btnDelivered.Location = new System.Drawing.Point(430, 22);
+            this.btnDelivered.Name = "btnDelivered";
+            this.btnDelivered.Size = new System.Drawing.Size(150, 27);
+            this.btnDelivered.Text = "Delivered to office";
+            this.btnDelivered.UseVisualStyleBackColor = true;
+            this.btnDelivered.Click += new System.EventHandler(this.btnDelivered_Click);
+            //
+            // btnCancel
+            //
+            this.btnCancel.Location = new System.Drawing.Point(590, 22);
+            this.btnCancel.Name = "btnCancel";
+            this.btnCancel.Size = new System.Drawing.Size(120, 27);
+            this.btnCancel.Text = "Cancel pickup";
+            this.btnCancel.UseVisualStyleBackColor = true;
+            this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             //
             // dgvLines
             //
@@ -192,11 +148,12 @@
             this.dgvLines.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
             this.dgvLines.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dgvLines.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
-                this.colLineId, this.colItem, this.colOrdered, this.colReceived, this.colRemaining, this.colReceiveNow });
-            this.dgvLines.Location = new System.Drawing.Point(10, 22);
+                this.colLineId, this.colItem, this.colOrdered, this.colReceived, this.colRemaining,
+                this.colAccepted, this.colRejected, this.colReason, this.colAction });
+            this.dgvLines.Location = new System.Drawing.Point(10, 60);
             this.dgvLines.Name = "dgvLines";
             this.dgvLines.RowHeadersVisible = false;
-            this.dgvLines.Size = new System.Drawing.Size(940, 135);
+            this.dgvLines.Size = new System.Drawing.Size(940, 215);
             //
             // columns of dgvLines
             //
@@ -204,86 +161,72 @@
             this.colLineId.Name = "colLineId";
             this.colLineId.ReadOnly = true;
             this.colLineId.Visible = false;
+            this.colItem.FillWeight = 220F;
             this.colItem.HeaderText = "Item";
             this.colItem.Name = "colItem";
             this.colItem.ReadOnly = true;
-            this.colItem.FillWeight = 250F;
             this.colOrdered.HeaderText = "Ordered";
             this.colOrdered.Name = "colOrdered";
             this.colOrdered.ReadOnly = true;
-            this.colReceived.HeaderText = "Already received";
+            this.colReceived.HeaderText = "Accepted so far";
             this.colReceived.Name = "colReceived";
             this.colReceived.ReadOnly = true;
-            this.colRemaining.HeaderText = "Remaining";
+            this.colRemaining.HeaderText = "Outstanding";
             this.colRemaining.Name = "colRemaining";
             this.colRemaining.ReadOnly = true;
-            this.colReceiveNow.HeaderText = "Receive now";
-            this.colReceiveNow.Name = "colReceiveNow";
+            this.colAccepted.HeaderText = "Accepted now";
+            this.colAccepted.Name = "colAccepted";
+            this.colRejected.HeaderText = "Rejected now";
+            this.colRejected.Name = "colRejected";
+            this.colReason.FillWeight = 180F;
+            this.colReason.HeaderText = "Reason (rejected, damaged, wrong item)";
+            this.colReason.Name = "colReason";
+            this.colAction.FillWeight = 110F;
+            this.colAction.HeaderText = "Request";
+            this.colAction.Items.AddRange(new object[] { "Return", "Replacement" });
+            this.colAction.Name = "colAction";
             //
             // lblNotes
             //
             this.lblNotes.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblNotes.AutoSize = true;
-            this.lblNotes.Location = new System.Drawing.Point(10, 170);
+            this.lblNotes.Location = new System.Drawing.Point(10, 292);
             this.lblNotes.Name = "lblNotes";
             this.lblNotes.Text = "Notes:";
             //
             // txtNotes
             //
             this.txtNotes.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtNotes.Location = new System.Drawing.Point(60, 166);
+            this.txtNotes.Location = new System.Drawing.Point(60, 288);
             this.txtNotes.MaxLength = 255;
             this.txtNotes.Name = "txtNotes";
             this.txtNotes.Size = new System.Drawing.Size(890, 23);
             //
-            // btnInTransit
+            // btnReport
             //
-            this.btnInTransit.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnInTransit.Location = new System.Drawing.Point(10, 205);
-            this.btnInTransit.Name = "btnInTransit";
-            this.btnInTransit.Size = new System.Drawing.Size(120, 30);
-            this.btnInTransit.Text = "Mark in transit";
-            this.btnInTransit.UseVisualStyleBackColor = true;
-            this.btnInTransit.Click += new System.EventHandler(this.btnInTransit_Click);
-            //
-            // btnReceive
-            //
-            this.btnReceive.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnReceive.Location = new System.Drawing.Point(140, 205);
-            this.btnReceive.Name = "btnReceive";
-            this.btnReceive.Size = new System.Drawing.Size(120, 30);
-            this.btnReceive.Text = "Receive items";
-            this.btnReceive.UseVisualStyleBackColor = true;
-            this.btnReceive.Click += new System.EventHandler(this.btnReceive_Click);
-            //
-            // btnCancel
-            //
-            this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnCancel.Location = new System.Drawing.Point(270, 205);
-            this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(120, 30);
-            this.btnCancel.Text = "Cancel delivery";
-            this.btnCancel.UseVisualStyleBackColor = true;
-            this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
+            this.btnReport.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnReport.Location = new System.Drawing.Point(10, 320);
+            this.btnReport.Name = "btnReport";
+            this.btnReport.Size = new System.Drawing.Size(230, 32);
+            this.btnReport.Text = "Submit receiving report";
+            this.btnReport.UseVisualStyleBackColor = true;
+            this.btnReport.Click += new System.EventHandler(this.btnReport_Click);
             //
             // frmDelivery
             //
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(984, 601);
+            this.ClientSize = new System.Drawing.Size(984, 596);
             this.Controls.Add(this.lblStatus);
             this.Controls.Add(this.cboStatus);
             this.Controls.Add(this.btnRefresh);
             this.Controls.Add(this.dgvDeliveries);
-            this.Controls.Add(this.grpSchedule);
             this.Controls.Add(this.grpSelected);
-            this.MinimumSize = new System.Drawing.Size(1000, 640);
+            this.MinimumSize = new System.Drawing.Size(1000, 635);
             this.Name = "frmDelivery";
             this.Text = "Deliveries";
             this.Load += new System.EventHandler(this.frmDelivery_Load);
             ((System.ComponentModel.ISupportInitialize)(this.dgvDeliveries)).EndInit();
-            this.grpSchedule.ResumeLayout(false);
-            this.grpSchedule.PerformLayout();
             this.grpSelected.ResumeLayout(false);
             this.grpSelected.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvLines)).EndInit();
@@ -297,28 +240,24 @@
         private System.Windows.Forms.ComboBox cboStatus;
         private System.Windows.Forms.Button btnRefresh;
         private System.Windows.Forms.DataGridView dgvDeliveries;
-        private System.Windows.Forms.GroupBox grpSchedule;
-        private System.Windows.Forms.Label lblOrder;
-        private System.Windows.Forms.ComboBox cboOrder;
-        private System.Windows.Forms.Label lblAddress;
-        private System.Windows.Forms.TextBox txtAddress;
-        private System.Windows.Forms.Label lblExpected;
-        private System.Windows.Forms.DateTimePicker dtpExpected;
-        private System.Windows.Forms.Label lblDriver;
-        private System.Windows.Forms.TextBox txtDriver;
-        private System.Windows.Forms.Button btnSchedule;
         private System.Windows.Forms.GroupBox grpSelected;
+        private System.Windows.Forms.Label lblDr;
+        private System.Windows.Forms.TextBox txtDr;
+        private System.Windows.Forms.Button btnPickedUp;
+        private System.Windows.Forms.Button btnDelivered;
+        private System.Windows.Forms.Button btnCancel;
         private System.Windows.Forms.DataGridView dgvLines;
         private System.Windows.Forms.DataGridViewTextBoxColumn colLineId;
         private System.Windows.Forms.DataGridViewTextBoxColumn colItem;
         private System.Windows.Forms.DataGridViewTextBoxColumn colOrdered;
         private System.Windows.Forms.DataGridViewTextBoxColumn colReceived;
         private System.Windows.Forms.DataGridViewTextBoxColumn colRemaining;
-        private System.Windows.Forms.DataGridViewTextBoxColumn colReceiveNow;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colAccepted;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colRejected;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colReason;
+        private System.Windows.Forms.DataGridViewComboBoxColumn colAction;
         private System.Windows.Forms.Label lblNotes;
         private System.Windows.Forms.TextBox txtNotes;
-        private System.Windows.Forms.Button btnInTransit;
-        private System.Windows.Forms.Button btnReceive;
-        private System.Windows.Forms.Button btnCancel;
+        private System.Windows.Forms.Button btnReport;
     }
 }

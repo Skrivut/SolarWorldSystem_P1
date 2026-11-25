@@ -180,12 +180,51 @@ IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE Version = 2)
 INSERT INTO dbo.SchemaVersion (Version, Description) VALUES (2, 'Align purchasing and delivery tables with DeliveryService');
 GO
 
+-- ===== Version 4: purchasing flow (PO approval, supplier pickup tasks, receiving report) =====
+-- (Version 3 was the one-line "UnitCost optional" fix; it is folded into the guarded step below.)
+IF COL_LENGTH('dbo.Suppliers', 'Address') IS NULL
+    EXEC('ALTER TABLE dbo.Suppliers ADD Address VARCHAR(255) NULL');   -- where the driver collects the goods
+
+IF COL_LENGTH('dbo.PurchaseOrders', 'ApprovedBy') IS NULL
+    EXEC('ALTER TABLE dbo.PurchaseOrders ADD ApprovedBy VARCHAR(100) NULL, DateApproved DATETIME NULL, DateClosed DATETIME NULL');
+
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.PurchaseOrderLines') AND name = 'UnitCost' AND is_nullable = 0)
+    EXEC('ALTER TABLE dbo.PurchaseOrderLines ALTER COLUMN UnitCost DECIMAL(12,2) NULL');
+
+-- A Deliveries row is now the driver's pickup task: Pending, PickedUp, Delivered (to the office), Received (RR done), Cancelled.
+IF COL_LENGTH('dbo.Deliveries', 'PickupAddress') IS NULL
+    EXEC('ALTER TABLE dbo.Deliveries ADD PickupAddress VARCHAR(255) NULL, SupplierDrNumber VARCHAR(50) NULL, PickedUpDate DATETIME NULL, ReportNumber VARCHAR(20) NULL, ReceivedBy VARCHAR(100) NULL, ReceivedDate DATETIME NULL');
+
+-- DeliveryLines now hold the receiving report (RR): accepted and rejected quantity per item.
+IF COL_LENGTH('dbo.DeliveryLines', 'QtyAccepted') IS NULL
+    EXEC('ALTER TABLE dbo.DeliveryLines ADD QtyAccepted INT NOT NULL CONSTRAINT DF_DeliveryLines_Acc DEFAULT 0, QtyRejected INT NOT NULL CONSTRAINT DF_DeliveryLines_Rej DEFAULT 0, RejectReason VARCHAR(255) NULL, DiscrepancyAction VARCHAR(20) NULL');
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE Version = 4)
+BEGIN
+    -- Carry over rows made before this version (a delivery used to be a scheduled drop-off).
+    UPDATE dbo.DeliveryLines SET QtyAccepted = QtyDelivered;
+    UPDATE dbo.Deliveries SET PickupAddress = DeliveryAddress WHERE PickupAddress IS NULL;
+    UPDATE dbo.Deliveries SET Status = CASE Status WHEN 'Scheduled' THEN 'Pending' WHEN 'InTransit' THEN 'PickedUp' WHEN 'Delivered' THEN 'Received' ELSE Status END;
+    INSERT INTO dbo.SchemaVersion (Version, Description) VALUES (4, 'Purchasing flow: PO approval, pickup tasks, receiving report');
+END
+GO
+
+-- Quantity on order per item, for the Incoming column of the inventory screen.
+CREATE OR ALTER VIEW dbo.vwIncomingStock AS
+SELECT l.ItemId, SUM(l.QtyOrdered - l.QtyReceived) AS QtyIncoming
+FROM dbo.PurchaseOrderLines l
+JOIN dbo.PurchaseOrders o ON o.PurchaseOrderId = l.PurchaseOrderId
+WHERE o.Status IN ('Ordered', 'PartiallyReceived')
+GROUP BY l.ItemId;
+GO
+
 /* ---- TEMPLATE for future changes: append a new block like this, never edit the blocks above ----
-IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE Version = 3)
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE Version = 5)
 BEGIN
     IF COL_LENGTH('dbo.Deliveries', 'VehiclePlate') IS NULL
         EXEC('ALTER TABLE dbo.Deliveries ADD VehiclePlate VARCHAR(20) NULL');
-    INSERT INTO dbo.SchemaVersion (Version, Description) VALUES (3, 'Add vehicle plate to deliveries');
+    INSERT INTO dbo.SchemaVersion (Version, Description) VALUES (5, 'Add vehicle plate to deliveries');
 END
 GO
 -------------------------------------------------------------------------------------------------- */
