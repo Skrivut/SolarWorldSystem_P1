@@ -115,6 +115,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\AuthService.cs" />
     <Compile Include="Services\DeliveryService.cs" />
+    <Compile Include="Services\InboxService.cs" />
     <Compile Include="Services\InventoryService.cs" />
     <Compile Include="Services\PurchasingService.cs" />
     <Compile Include="Services\RequisitionService.cs" />
