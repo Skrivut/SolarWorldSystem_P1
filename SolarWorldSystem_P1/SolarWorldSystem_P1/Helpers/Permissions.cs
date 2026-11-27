@@ -20,7 +20,7 @@ namespace SolarWorldERP.Helpers
         /// true            = staff can only LOOK at purchasing and follow up suppliers. Turning this on also needs the
         ///                   small edits to PurchasingService and frmPurchasing listed in the chat.
         /// </summary>
-        public static bool StaffPurchasingViewOnly = true;
+        public static bool StaffPurchasingViewOnly = false;
 
         // ----- Which menu items a role sees -----
         public static bool CanOpenInbox { get { return IsOwner || IsStaff; } }
@@ -28,6 +28,10 @@ namespace SolarWorldERP.Helpers
         public static bool CanOpenPurchasing { get { return IsOwner || IsStaff; } }
         public static bool CanOpenDelivery { get { return true; } }   // owner, staff and driver
         public static bool CanOpenInventory { get { return IsOwner || IsStaff; } }
+
+        // ----- What a role may DO elsewhere -----
+        /// <summary>Shows the "+ New request" button in the inbox. Staff create requests; the owner approves them.</summary>
+        public static bool CanCreateRequisition { get { return IsStaff; } }
 
         // ----- What a role may DO inside Purchasing -----
         /// <summary>Create a draft PO, submit it for approval, add or edit suppliers, cancel an order.</summary>

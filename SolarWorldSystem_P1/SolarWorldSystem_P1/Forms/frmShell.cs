@@ -90,8 +90,7 @@ namespace SolarWorldERP.Forms
         private void frmShell_Load(object sender, EventArgs e)
         {
             // All role rules live in Permissions.cs. Nothing is decided here.
-            AddItem("Inbox", "inbox", Permissions.CanOpenInbox, null,
-                () => Placeholder("Inbox", "The Action Inbox is built in Part 3. Use Requests for now."));
+            AddItem("Inbox", "inbox", Permissions.CanOpenInbox, null, () => new frmInbox());
             AddItem("Requests", "requests", Permissions.CanOpenRequests, null, () => new frmRequisitionList());
             AddItem("Purchasing", "purchasing", Permissions.CanOpenPurchasing,
                 Permissions.PurchasingIsViewOnly ? "View only" : null, () => new frmPurchasing());
@@ -100,8 +99,8 @@ namespace SolarWorldERP.Forms
 
             Text = "SolarWorld ERP - " + Session.FullName + " (" + Session.Role + ")";
 
-            // First screen: Requests for owner and staff (until the Inbox exists), Delivery for the driver
-            string start = (Permissions.CanOpenRequests) ? "Requests" : "Delivery";
+            // First screen: the Inbox for owner and staff, Delivery for the driver
+            string start = Permissions.CanOpenInbox ? "Inbox" : "Delivery";
             if (_screens.ContainsKey(start)) ShowModule(start);
         }
 
