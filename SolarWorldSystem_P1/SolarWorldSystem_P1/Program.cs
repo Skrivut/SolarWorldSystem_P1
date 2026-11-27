@@ -23,7 +23,7 @@ namespace SolarWorldERP
                     if (login.ShowDialog() != DialogResult.OK) return;
                 }
 
-                var main = new frmMain();
+                var main = new frmShell();
                 Application.Run(main);
 
                 if (!main.LoggedOut) return;   // closed the window or chose Exit

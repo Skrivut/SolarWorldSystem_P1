@@ -11,11 +11,11 @@ namespace SolarWorldERP.Helpers
     public static class Theme
     {
         // ----- Colors -----
-        public static readonly Color Canvas = ColorTranslator.FromHtml("#FAF9F6");  // page background
-        public static readonly Color LeftPane = ColorTranslator.FromHtml("#F4F2EC");  // menu rail and inbox background
-        public static readonly Color Hairline = ColorTranslator.FromHtml("#E8E5DD");  // thin dividers and borders
+        public static readonly Color Canvas = ColorTranslator.FromHtml("#F6F4EF");  // page background (slightly deeper than the design file, easier on the eyes)
+        public static readonly Color LeftPane = ColorTranslator.FromHtml("#EEEBE3");  // menu rail and inbox background
+        public static readonly Color Hairline = ColorTranslator.FromHtml("#DCD8CC");  // thin dividers and borders
         public static readonly Color Ink = ColorTranslator.FromHtml("#2A2925");  // main text
-        public static readonly Color Muted = ColorTranslator.FromHtml("#8B877D");  // secondary text
+        public static readonly Color Muted = ColorTranslator.FromHtml("#6E6A61");  // secondary text (darker so it is easier to read)
         public static readonly Color Navy = ColorTranslator.FromHtml("#1F3A5F");  // primary buttons, active menu item
         public static readonly Color NavyTint = ColorTranslator.FromHtml("#E3EAF3");  // selected row, document header band
         public static readonly Color Amber = ColorTranslator.FromHtml("#E8A317");  // needs attention

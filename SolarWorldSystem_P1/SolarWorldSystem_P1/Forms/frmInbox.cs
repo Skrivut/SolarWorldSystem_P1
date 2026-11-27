@@ -17,7 +17,8 @@ namespace SolarWorldERP.Forms
     {
         private readonly InboxService _service = new InboxService();
         private readonly FlowLayoutPanel _list = new FlowLayoutPanel();
-        private readonly Panel _detail = new Panel();
+        private readonly DocumentService _documents = new DocumentService();
+        private readonly DocumentView _detail = new DocumentView();
         private readonly Label _count = new Label();
         private readonly Label _warning = new Label();
         private string _selectedKey;   // "RF:12", so the same task stays selected after a refresh
@@ -65,7 +66,7 @@ namespace SolarWorldERP.Forms
             _warning.Padding = new Padding(24, 8, 24, 8);
 
             // Header: title, "+ New request" (staff), count, Refresh
-            var header = new Panel { Dock = DockStyle.Top, Height = 84, BackColor = Theme.LeftPane };
+            var header = new Panel { Dock = DockStyle.Top, Size = new Size(400, 84), BackColor = Theme.LeftPane };   // width = the left panel, so right-anchored controls land correctly
             header.Controls.Add(new Label { Text = "Inbox", Font = new Font("Segoe UI", 13f, FontStyle.Bold), ForeColor = Theme.Ink, AutoSize = true, Location = new Point(24, 16) });
 
             _count.Font = Theme.Small;
@@ -174,25 +175,30 @@ namespace SolarWorldERP.Forms
             }
         }
 
-        // ----- The right side (a summary for now; Part 4 replaces this with the document) -----
+        // ----- The right side: the document for the selected task -----
 
         private void ShowDetail(InboxItem item)
         {
-            foreach (Control c in _detail.Controls.Cast<Control>().ToList()) c.Dispose();
-            if (item == null)
+            if (item == null) { _detail.ShowMessage("Select a task from the inbox."); return; }
+            try
             {
-                _detail.Controls.Add(Text2("Select a task from the inbox.", Theme.Body, Theme.Muted, 40, 40));
-                return;
+                if (item.Kind == "Item")
+                {
+                    _detail.ShowMessage(item.Title + "\r\n" + item.Subtitle + "\r\n\r\nUse Inventory to check this stock, or Purchasing to prepare an order.");
+                    return;
+                }
+                int? rfId = _documents.FindRfId(item.Kind, item.Id);
+                if (!rfId.HasValue)
+                {
+                    _detail.ShowMessage("This purchase order is not linked to a requisition.");
+                    return;
+                }
+                _detail.ShowDocument(_documents.GetRequisitionDocument(rfId.Value));
             }
-            _detail.Controls.Add(Text2(item.Title, Theme.Title, Theme.Ink, 40, 36));
-            _detail.Controls.Add(Text2(item.Subtitle, Theme.Body, Theme.Muted, 42, 92));
-            _detail.Controls.Add(Text2("Type: " + item.Kind + "    Id: " + item.Id + "    Waiting: " + item.Age, Theme.Small, Theme.Muted, 42, 124));
-            _detail.Controls.Add(Text2("The document view for this task is built in Part 4.", Theme.Body, Theme.Navy, 42, 170));
-        }
-
-        private static Label Text2(string text, Font font, Color color, int x, int y)
-        {
-            return new Label { Text = text, Font = font, ForeColor = color, AutoSize = true, Location = new Point(x, y) };
+            catch (Exception ex)
+            {
+                _detail.ShowMessage("Could not open this task.\r\n" + ex.Message);
+            }
         }
 
         // ----- Actions -----
